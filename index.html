@@ -111,7 +111,11 @@ tr.none{color:var(--muted)}
 .qty{display:flex;gap:6px;align-items:center}
 .qty input{width:4.6em;text-align:right}
 .qty span{font-size:14px;color:var(--muted)}
-.price{width:7.5em;text-align:right}
+.price{width:7em;text-align:right}
+.price.auto{color:var(--green);font-weight:700;border-style:dashed}
+.pin{display:flex;flex-wrap:wrap;gap:8px}
+.mini{display:grid;gap:2px;font-size:13px;font-weight:700;color:var(--muted)}
+.per{display:block;margin-top:4px;color:var(--green);font-weight:600}
 .tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
 /* compras */
 .years{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px 32px}
@@ -232,7 +236,7 @@ table{font-size:14px}th,td{padding:7px 4px}
       <div class="prog"><b id="pct">0%</b><div class="pbar"><i id="pbar" style="width:0"></i></div><span id="ptext"></span></div>
       <div id="twarn"></div>
       <div class="scroll"><table class="stack shop">
-        <thead><tr><th>Peguei</th><th>Item</th><th>O sistema sugere</th><th>Comprei</th><th class="r">Estimado</th><th class="r">Paguei (R$)</th></tr></thead>
+        <thead><tr><th>Peguei</th><th>Item</th><th>O sistema sugere</th><th>Comprei</th><th>Preço</th><th>Total pago</th></tr></thead>
         <tbody id="tlist"></tbody>
       </table></div>
       <div class="tot" id="tot"></div>
@@ -242,7 +246,7 @@ table{font-size:14px}th,td{padding:7px 4px}
         <button type="button" id="treset">Voltar pra data prevista</button>
       </div>
       <div class="chips" id="cooks"></div>
-      <p class="small">Marca cada item quando pôr no carrinho. "Comprei" em branco conta como a sugestão; "Paguei" é o total da linha. Quando você anota quanto pagou, as próximas compras passam a ser estimadas com o seu preço. ✅ = preço normal confirmado no encarte do Baggio; o resto começa com estimativas de novembro de 2026.</p>
+      <p class="small">Marca cada item quando pôr no carrinho. "Comprei" em branco conta como a sugestão. No preço, digita o que for mais fácil: o da unidade (ou do kg, no frango, batata, cebola e alho) e o total sai sozinho, ou o total e a unidade sai sozinha. No que é vendido no peso, põe o peso da etiqueta pra conta ficar exata. Quando você anota quanto pagou, as próximas compras passam a ser estimadas com o seu preço. ✅ = preço normal confirmado no encarte do Baggio; o resto começa com estimativas de novembro de 2026.</p>
       <div class="tools"><button type="button" id="limpar">Apagar o que anotei nesta compra</button><span class="msg" id="msg" role="status"></span></div>
     </div>
   </section>
@@ -352,6 +356,11 @@ const items=[
 {id:"alho",n:"Alho",pk:10,p:1.40,b:7,d:[0,1,0,0,0,0,0],q:v=>`${Math.round(v)} dentes`,w:["cabeça","cabeças"],x:n=>` (uns ${n*10} dentes)`}
 ];
 const buyLabel=(it,n)=>`${n} ${pl(n,it.w[0],it.w[1])}${it.x?it.x(n):""}`;
+/* como cada coisa é vendida: m = kg (ou litro) por embalagem; kg = vendido no peso, com o peso médio de cada unidade */
+const PU={arroz:{m:1},feijao:{m:1},macarrao:{m:.5},farinha:{m:1},fermento:{m:.125},acucar:{m:1},sal:{m:1},oleo:{m:.9,l:1},molho:{m:.3},ovos:{ovo:20},frango:{kg:.25,e:"o pedaço"},batata:{kg:.15,e:"a batata"},cebola:{kg:.15,e:"a cebola"},alho:{kg:.045,e:"a cabeça"}};
+const uLabel=it=>PU[it.id].kg?"R$ o kg":`R$ ${it.w[0].split(" ")[0]==="bandeja"?"a":"o"} ${it.w[0].split(" ")[0]}`;
+const fx=v=>v==null||!isFinite(v)?"":v.toFixed(2).replace(".",",");
+const perTxt=r=>{const pu=PU[r.it.id];if(r.uPrice==null)return "";if(pu.kg)return `${brl(r.uPrice)} o kg${r.act>0?`, ${brl(r.paid/r.act)} ${pu.e}`:""}`;if(pu.ovo)return `${brl(r.uPrice/pu.ovo)} o ovo, ${brl(r.uPrice/pu.ovo*12)} a dúzia`;return `${brl(r.uPrice/pu.m)} ${pu.l?"o litro":"o kg"}`};
 /* a semana: o que é igual toda semana (café, lanche, à noite) */
 const daily=[
 {c:"Pãozinho docinho da semana passada e 1 ovo frito",l:"2 pãezinhos docinhos quentinhos"},
@@ -483,9 +492,15 @@ function compute(){
       const sg=sug[it.id]+(pre[it.id]||0),act=qv[it.id]??sg;
       const after=has[it.id]+act*it.pk-o.need[it.id];
       stock[it.id]=Math.max(0,after);
-      const paid=toNum(x.p&&x.p[it.id]),est=act*unit[it.id];
+      /* preço: você digita o da unidade (ou do kg) ou o total; o outro sai sozinho */
+      const pu=PU[it.id],uIn=toNum(x.u&&x.u[it.id]),pIn=toNum(x.p&&x.p[it.id]),wIn=toNum(x.wt&&x.wt[it.id]),sv=x.s&&x.s[it.id];
+      const base=pu.kg?(wIn??act*pu.kg):act;
+      let paid=null,uPrice=null,src=null;
+      if(uIn!=null&&(sv==="u"||pIn==null)){src="u";uPrice=uIn;paid=uIn*base}
+      else if(pIn!=null){src="p";paid=pIn;uPrice=base>0?pIn/base:null}
+      const est=act*unit[it.id];
       if(paid!=null&&act>0)unit[it.id]=paid/act;
-      return {it,use:o.need[it.id],has:has[it.id],sug:sg,pre:pre[it.id]||0,qv:qv[it.id],act,left:Math.max(0,after),short:after<-1e-6?-after:0,est,paid,got:!!(x.c&&x.c[it.id])};
+      return {it,use:o.need[it.id],has:has[it.id],sug:sg,pre:pre[it.id]||0,qv:qv[it.id],act,left:Math.max(0,after),short:after<-1e-6?-after:0,est,paid,uPrice,src,base,wIn,got:!!(x.c&&x.c[it.id])};
     });
     const toBuy=rows.filter(r=>r.act>0),got=toBuy.filter(r=>r.got),paidVals=rows.filter(r=>r.paid!=null);
     trips.push({i,a:o.a,z:o.z,days:o.days,cooks:o.cooks,rows,exp:o.exp,done,est:rows.reduce((s,r)=>s+r.est,0),paid:paidVals.reduce((s,r)=>s+r.paid,0),filled:paidVals.length,
@@ -555,17 +570,28 @@ function renderTrip(){
   $("cooks").innerHTML=t.cooks.map(c=>`<span class="chip">${dm(c.t)}: semana ${c.v}, ${WEEKS[c.v].t.toLowerCase()}${c.n<7?`, curta (${c.n} ${pl(c.n,"dia","dias")})`:""}</span>`).join("");
   $("tot").innerHTML=totHTML(t);
   $("tlist").innerHTML=t.rows.map(r=>{
-    const it=r.it,qv=r.qv==null?"":r.qv,pv=x.p&&x.p[it.id]!=null?String(x.p[it.id]).replace(".",","):"";
+    const it=r.it,qv=r.qv==null?"":r.qv,pu=PU[it.id];
+    const uv=r.src==="u"?String(x.u[it.id]).replace(".",","):fx(r.uPrice),pv=r.src==="p"?String(x.p[it.id]).replace(".",","):fx(r.paid);
+    const wv=r.wIn!=null?String(x.wt[it.id]).replace(".",","):"";
     const det=`Usa ${it.q(r.use)}${r.has>1e-6?`, já tem ${it.q(r.has)} em casa`:""}${r.left>1e-6?`, sobram ${it.q(r.left)} pra próxima`:""}.`;
     const sg=r.sug>0?`<b>${buyLabel(it,r.sug)}</b>${r.pre?`<span class="pre">${r.pre} ${pl(r.pre,"adiantado","adiantados")} pra próxima compra</span>`:""}`:`<b>Não precisa comprar</b>`;
     const cls=r.act>0?(r.got?"got":""):"none";
-    return `<tr class="${cls}" id="row-${it.id}"><td class="ck">${r.act>0?`<label for="c-${it.id}"><input type="checkbox" id="c-${it.id}" data-c="${it.id}"${r.got?" checked":""} aria-label="Peguei: ${it.n}"></label>`:""}</td><td class="nm" data-l="Item"><b>${it.n}${it.ok?" ✅":""}</b><span class="small">${r.act>0?buyLabel(it,r.act):"Tem em casa"}</span></td><td data-l="Sugestão" class="sg"><div>${sg}<span class="small">${det}</span></div></td><td data-l="Comprei"><span class="qty"><input type="number" min="0" step="1" inputmode="numeric" id="q-${it.id}" data-q="${it.id}" value="${qv}" placeholder="${r.sug}" aria-label="Quantos comprei: ${it.n}"><span>${it.w[1].split(" ")[0]}</span></span></td><td data-l="Estimado" class="r" id="e-${it.id}">${r.act>0?brl(r.est):"—"}</td><td data-l="Paguei" class="r"><input class="price" type="text" inputmode="decimal" id="p-${it.id}" data-p="${it.id}" value="${pv}" placeholder="${r.act>0?nf(r.est,2):"0"}" aria-label="Quanto paguei: ${it.n}"></td></tr>`;
+    return `<tr class="${cls}" id="row-${it.id}"><td class="ck">${r.act>0?`<label for="c-${it.id}"><input type="checkbox" id="c-${it.id}" data-c="${it.id}"${r.got?" checked":""} aria-label="Peguei: ${it.n}"></label>`:""}</td><td class="nm" data-l="Item"><b>${it.n}${it.ok?" ✅":""}</b><span class="small">${r.act>0?buyLabel(it,r.act):"Tem em casa"}</span></td><td data-l="Sugestão" class="sg"><div>${sg}<span class="small">${det}</span></div></td><td data-l="Comprei"><span class="qty"><input type="number" min="0" step="1" inputmode="numeric" id="q-${it.id}" data-q="${it.id}" value="${qv}" placeholder="${r.sug}" aria-label="Quantos comprei: ${it.n}"><span>${it.w[1].split(" ")[0]}</span></span></td><td data-l="Preço"><div><div class="pin"><label class="mini" for="u-${it.id}">${uLabel(it)}<input class="price${r.src==="p"?" auto":""}" type="text" inputmode="decimal" id="u-${it.id}" data-u="${it.id}" value="${uv}" placeholder="${pu.kg?"":fx(r.act>0?r.est/r.act:it.p)}"></label>${pu.kg?`<label class="mini" for="wt-${it.id}">Peso (kg)<input class="price" type="text" inputmode="decimal" id="wt-${it.id}" data-wt="${it.id}" value="${wv}" placeholder="${nf(r.act*pu.kg,2)}"></label>`:""}</div><span class="small per" id="d-${it.id}">${perTxt(r)}</span></div></td><td data-l="Total pago"><div><label class="mini" for="p-${it.id}">Total (R$)<input class="price${r.src==="u"?" auto":""}" type="text" inputmode="decimal" id="p-${it.id}" data-p="${it.id}" value="${pv}" placeholder="${r.act>0?fx(r.est):"0"}"></label><span class="small" id="e-${it.id}">${r.act>0?`Estimado ${brl(r.est)}`:"—"}</span></div></td></tr>`;
   }).join("");
 }
 function refresh(){
   compute();renderTag();ledger();const t=trips[cur];
   $("tot").innerHTML=totHTML(t);progress(t);statusLine(t);warn(t);
-  t.rows.forEach(r=>{const row=$("row-"+r.it.id);if(!row)return;$("e-"+r.it.id).textContent=r.act>0?brl(r.est):"—";row.className=r.act>0?(r.got?"got":""):"none"});
+  const act=document.activeElement;
+  t.rows.forEach(r=>{const id=r.it.id,row=$("row-"+id);if(!row)return;
+    $("e-"+id).textContent=r.act>0?`Estimado ${brl(r.est)}`:"—";$("d-"+id).textContent=perTxt(r);row.className=r.act>0?(r.got?"got":""):"none";
+    const u=$("u-"+id),p=$("p-"+id),w=$("wt-"+id);
+    if(r.src==="u"&&p!==act){p.value=fx(r.paid)}
+    if(r.src==="p"&&u!==act){u.value=fx(r.uPrice)}
+    if(r.src==null){if(p!==act)p.value="";if(u!==act)u.value=""}
+    u.classList.toggle("auto",r.src==="p");p.classList.toggle("auto",r.src==="u");
+    if(w&&w!==act)w.placeholder=nf(r.act*PU[id].kg,2);
+    p.placeholder=r.act>0?fx(r.est):"0"});
 }
 /* página Semana */
 const thisWeek=()=>{const t=Math.max(TODAY,S0);const p=pos(Math.min(t,END-DAY));return letter(p.w)};
@@ -676,14 +702,17 @@ $("tdone").addEventListener("click",()=>{
 });
 $("tlist").addEventListener("change",e=>{const c=e.target.closest("input[data-c]");if(!c)return;const x=tr(cur);x.c=x.c||{};if(c.checked)x.c[c.dataset.c]=true;else delete x.c[c.dataset.c];save();refresh()});
 $("tlist").addEventListener("input",e=>{
-  const q=e.target.closest("input[data-q]"),p=e.target.closest("input[data-p]");
-  if(!q&&!p)return;const x=tr(cur);
+  const q=e.target.closest("input[data-q]"),p=e.target.closest("input[data-p]"),u=e.target.closest("input[data-u]"),w=e.target.closest("input[data-wt]");
+  if(!q&&!p&&!u&&!w)return;const x=tr(cur);
   if(q){x.q=x.q||{};const v=q.value.trim();if(v===""||isNaN(+v))delete x.q[q.dataset.q];else x.q[q.dataset.q]=Math.max(0,Math.round(+v))}
-  if(p){x.p=x.p||{};const v=toNum(p.value);if(v==null)delete x.p[p.dataset.p];else x.p[p.dataset.p]=v}
+  const setSrc=(id,s,v,box)=>{x[box]=x[box]||{};x.s=x.s||{};if(v==null){delete x[box][id];if(x.s[id]===s)delete x.s[id];const o=s==="u"?"p":"u";delete (x[o]||{})[id]}else{x[box][id]=v;x.s[id]=s;const o=s==="u"?"p":"u";if(x[o])delete x[o][id]}};
+  if(p)setSrc(p.dataset.p,"p",toNum(p.value),"p");
+  if(u)setSrc(u.dataset.u,"u",toNum(u.value),"u");
+  if(w){x.wt=x.wt||{};const v=toNum(w.value);if(v==null||v===0)delete x.wt[w.dataset.wt];else x.wt[w.dataset.wt]=v}
   save();refresh();
 });
 const twoTap=(btn,label,fn)=>btn.addEventListener("click",()=>{if(!btn.dataset.armed){btn.dataset.armed="1";btn.textContent="Toca de novo pra confirmar";btn.classList.add("dark");setTimeout(()=>{delete btn.dataset.armed;btn.textContent=label;btn.classList.remove("dark")},4000);return}delete btn.dataset.armed;btn.textContent=label;btn.classList.remove("dark");fn()});
-twoTap($("limpar"),"Apagar o que anotei nesta compra",()=>{const x=st.trips[cur];if(x){delete x.q;delete x.p;delete x.c;x.done=false}save();render();say("msg","Anotações desta compra apagadas.")});
+twoTap($("limpar"),"Apagar o que anotei nesta compra",()=>{const x=st.trips[cur];if(x){delete x.q;delete x.p;delete x.u;delete x.wt;delete x.s;delete x.c;x.done=false}save();render();say("msg","Anotações desta compra apagadas.")});
 twoTap($("zerar"),"Apagar tudo",()=>{st=DEF();save();fillCfg();cur=null;wSel=null;render();say("msg2","Tudo apagado. Começa de novo pela data da primeira compra.")});
 $("exp").addEventListener("click",()=>{try{const blob=new Blob([JSON.stringify(st,null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`marmitas-backup-${iso(TODAY)}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);say("msg2","Backup salvo.")}catch(err){say("msg2","Não deu pra salvar o backup neste navegador.")}});
 $("imp").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o||!isDate(o.start))throw 0;st=Object.assign(DEF(),o);clean();save();fillCfg();cur=null;wSel=null;render();say("msg2","Backup aberto.")}catch(err){say("msg2","Esse arquivo não é um backup válido.")}e.target.value=""};rd.readAsText(f)});
