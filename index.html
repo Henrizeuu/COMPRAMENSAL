@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marmitas do ano</title>
+<meta name="description" content="Compra do mês, marmitas da semana e o que comer hoje.">
+<meta name="theme-color" content="#ffcc2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Marmitas">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday: a small app for one person who shops once a month and cooks every Sunday, weighing everything
+   IDEA the supermarket flyer and the kitchen notebook on the fridge, split into pages like a little booklet
+   PICTURE each page leads with its working thing: today's meals, the list being ticked, the scale-by-scale cooking sheet
+   COLOUR white ground, yolk-yellow bar, bean-black ink, tomato red for money, green for what is done
+   TYPE Barlow Condensed 800 for numerals and titles + Barlow for text
+   LAYOUT laptop: yellow bar with tabs on top, one page below; phone: tabs fixed at the bottom like an app */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#14110f);--ink:light-dark(#1b1511,#f4ede4);--muted:light-dark(#6b5d52,#b5a697);--yolk:light-dark(#ffcc2e,#2b220b);--yolkink:light-dark(#1b1511,#ffd54a);--tomato:light-dark(#cf321c,#ff6e55);--chick:light-dark(#9a560a,#b8701c);--line:light-dark(#ece4d9,#2e2823);--soft:light-dark(#fff7da,#1e1a15);--card:light-dark(#ffffff,#1a1613);--field:light-dark(#ffffff,#100d0b);--green:light-dark(#1f7a3a,#3f9e5c)}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Barlow,system-ui,sans-serif;overflow-x:clip}
+a{color:inherit;text-decoration-color:var(--tomato);text-underline-offset:3px;text-decoration-thickness:2px}
+h1,h2,h3{font-family:"Barlow Condensed",Barlow,sans-serif;font-weight:800;line-height:1.05;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h2{font-size:clamp(34px,5vw,48px)}
+h3{font-size:28px}
+h4{margin:22px 0 8px;font-size:18px}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+.pg{padding-block:clamp(24px,4vw,48px)}
+.lead{margin:8px 0 18px;color:var(--muted);max-width:62em}
+.small{font-size:14px;color:var(--muted)}
+.bar{background:var(--yolk);color:var(--yolkink);position:sticky;top:0;z-index:10;padding-top:env(safe-area-inset-top,0px)}
+.bar .wrap{display:flex;align-items:center;gap:20px;min-height:64px}
+.brand{font:800 28px/1 "Barlow Condensed",sans-serif;white-space:nowrap;text-decoration:none}
+#nav{display:flex;gap:4px;overflow-x:auto}
+#nav a{flex:none;padding:10px 14px;border-radius:999px;text-decoration:none;font-weight:700;font-size:15px}
+#nav a[aria-current=page]{background:var(--yolkink);color:var(--yolk)}
+[hidden]{display:none!important}
+input,select,button{font:inherit;font-size:16px;color:var(--ink)}
+input,select{min-height:44px;padding:8px 10px;border:2px solid light-dark(#1b1511,#6b5d52);border-radius:8px;background:var(--field);width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--tomato);outline-offset:2px}
+button{min-height:44px;padding:8px 16px;border-radius:8px;border:2px solid var(--ink);background:var(--bg);font-weight:700;cursor:pointer}
+button:hover{background:var(--soft)}
+button.dark{background:var(--ink);color:var(--bg)}
+button.go{background:var(--green);border-color:var(--green);color:#fff}
+.msg{font-size:15px;font-weight:600}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:14px;color:var(--muted)}
+td.r,th.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mk{display:inline-block;padding:1px 8px;border-radius:4px;font-size:13px;font-weight:700;white-space:nowrap;color:#fff}
+.mk-F{background:var(--chick)}.mk-B{background:light-dark(#6f6100,#8a7708)}.mk-M{background:light-dark(#cf321c,#b8361f)}.mk-S{background:light-dark(#2f5d8a,#3f74a8)}.mk-O{background:light-dark(#2a1d17,#5a463a)}
+/* hoje */
+.today{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);gap:24px 40px;align-items:start}
+.dayhead{margin-bottom:16px}
+.dayhead p{margin:6px 0 0;font-size:18px;font-weight:600}
+.meals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.meal{padding:16px 18px;border-radius:12px;background:var(--soft);min-height:118px}
+.meal small{display:block;font:800 24px/1 "Barlow Condensed",sans-serif;margin-bottom:8px}
+.meal div{font-size:17px}
+.night{margin-top:12px;padding:14px 18px;border-radius:12px;border:2px solid var(--ink)}
+.night b{display:block}
+.tag{background:var(--yolk);color:var(--yolkink);border-radius:14px;padding:20px 22px;display:grid;gap:6px}
+.tag .k{font-weight:700;font-size:15px}
+.tag .d{font:800 clamp(46px,6vw,68px)/.95 "Barlow Condensed",sans-serif}
+.tag .e{font:800 clamp(30px,4vw,40px)/1 "Barlow Condensed",sans-serif}
+.tag p{margin:0}
+.tag .pb{height:12px;border-radius:6px;background:color-mix(in srgb,var(--yolkink) 18%,transparent);overflow:hidden}
+.tag .pb i{display:block;height:100%;background:var(--yolkink)}
+.tag button{justify-self:start;margin-top:6px;border-color:var(--yolkink);background:var(--yolkink);color:var(--yolk)}
+/* lista */
+.mhead{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between}
+.mnav{display:flex;gap:8px}
+.status{margin:12px 0 0;padding:10px 14px;border-radius:8px;background:var(--soft);font-weight:600}
+.status.late{background:color-mix(in srgb,var(--tomato) 14%,transparent)}
+.status.ok{background:var(--ink);color:var(--bg)}
+.status.full{background:var(--green);color:#fff}
+.trip{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:end;margin-top:14px}
+.trip label{display:grid;gap:4px;font-weight:700;font-size:15px}
+.trip input{width:12em}
+.prog{position:sticky;top:64px;z-index:4;background:var(--bg);padding:12px 0;margin-top:14px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-items:center}
+.prog b{font:800 clamp(40px,6vw,56px)/1 "Barlow Condensed",sans-serif;grid-row:span 2;color:var(--green)}
+.pbar{height:14px;border-radius:7px;background:var(--soft);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--green);transition:width .25s}
+.prog span{font-size:15px;font-weight:600}
+.warn{margin:12px 0 0;padding:10px 14px;border-left:4px solid var(--tomato);background:color-mix(in srgb,var(--tomato) 8%,transparent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+.chip{padding:4px 10px;border-radius:999px;background:var(--soft);font-weight:600;font-size:15px}
+.tot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0 6px}
+.tot div{padding:14px 16px;border-radius:10px;background:var(--soft)}
+.tot b{display:block;font:800 clamp(30px,4vw,40px)/1 "Barlow Condensed",sans-serif;white-space:nowrap}
+.tot span{font-size:14px;font-weight:600;color:var(--muted)}
+.tot .paid{background:var(--ink);color:var(--bg)}
+.tot .paid span{color:inherit;opacity:.85}
+.tot .over b{color:var(--tomato)}
+.ck label{display:flex;align-items:center;justify-content:center;width:44px;height:44px;cursor:pointer}
+.ck input{width:28px;height:28px;min-height:0;margin:0;accent-color:var(--green);cursor:pointer}
+.nm b{display:block;font-size:17px}
+.sg b{display:block}
+.pre{display:block;font-size:14px;font-weight:700;color:var(--green)}
+tr.got .nm b{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
+tr.got td:not(.ck){opacity:.7}
+tr.none{color:var(--muted)}
+.qty{display:flex;gap:6px;align-items:center}
+.qty input{width:4.6em;text-align:right}
+.qty span{font-size:14px;color:var(--muted)}
+.price{width:7.5em;text-align:right}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
+/* compras */
+.years{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px 32px}
+.yr h3{margin:0}
+.ysum{margin:2px 0 8px;font-size:15px;font-weight:600}
+.ysum b{white-space:nowrap}
+.lrow{display:grid;grid-template-columns:5.8em minmax(0,1fr) 7.6em;gap:10px;align-items:center;width:100%;min-height:40px;padding:2px 8px;border-radius:6px;color:inherit;cursor:pointer;border:2px solid transparent;background:none;text-align:left;font-weight:600;font-size:15px}
+.lrow:hover{border-color:var(--ink);background:none}
+.lrow.on{background:var(--soft)}
+.lrow .m{white-space:nowrap}
+.lrow.late .m{color:var(--tomato)}
+.track{position:relative;height:16px;background:var(--soft);border-radius:3px}
+.lrow.on .track{background:var(--bg)}
+.track i{position:absolute;inset:0 auto 0 0;background:color-mix(in srgb,var(--ink) 30%,transparent);border-radius:3px}
+.lrow.done .track i{background:var(--ink)}
+.track u{position:absolute;inset:0 auto 0 0;background:var(--green);border-radius:3px}
+.track b{position:absolute;top:-4px;bottom:-4px;width:4px;background:var(--tomato);border-radius:2px}
+.track s{position:absolute;top:-3px;bottom:-3px;border-left:2px dashed var(--muted)}
+.lrow .v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.lkey{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 16px;font-size:14px;font-weight:600}
+.lkey span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:14px;height:10px;border-radius:2px;background:color-mix(in srgb,var(--ink) 30%,transparent)}
+.sw.f{background:var(--ink)}.sw.g{background:var(--green)}
+.sw.p{width:4px;height:16px;background:var(--tomato)}
+.sw.l{width:0;height:14px;border-left:2px dashed var(--muted);border-radius:0;background:none}
+/* semana */
+.wtabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:6px 0 4px}
+.wtab{display:grid;gap:2px;text-align:left;padding:12px 14px;border-radius:10px;border:2px solid var(--line);background:var(--bg)}
+.wtab b{font:800 30px/1 "Barlow Condensed",sans-serif}
+.wtab span{font-size:14px;font-weight:600;color:var(--muted)}
+.wtab[aria-pressed=true]{border-color:var(--ink);background:var(--yolk);color:var(--yolkink)}
+.wtab[aria-pressed=true] span{color:inherit}
+.two{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px 44px;align-items:start}
+.steps{margin:0;padding-left:22px;display:grid;gap:10px}
+.steps li b{white-space:nowrap}
+.calc{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px}
+.calc label{display:grid;gap:4px;padding:12px 14px;border-radius:10px;background:var(--soft);font-weight:700;font-size:15px}
+.calc output{font-size:15px;font-weight:600;color:var(--green)}
+.calc .small{font-weight:400}
+.mt td:first-child{font:800 22px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
+.mt .w{font-variant-numeric:tabular-nums;white-space:nowrap}
+.where{font-weight:700;white-space:nowrap}
+.cook td{background:color-mix(in srgb,var(--yolk) 35%,transparent)}
+.rules{columns:2 340px;column-gap:40px;padding-left:20px;margin:14px 0 0}
+.rules li{break-inside:avoid;margin:0 0 10px}
+/* receitas, ajustes */
+.recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:16px;margin-top:18px}
+.rec{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px;scroll-margin-top:80px}
+.rende{margin:4px 0 8px;color:var(--muted);font-size:15px}
+.rec h4{margin:12px 0 4px;font-size:15px}
+.rec ul,.rec ol{margin:0;padding-left:20px}
+.rec li{margin:2px 0}
+.tip{margin:10px 0 0;font-size:15px;padding:8px 10px;background:var(--soft);border-radius:6px}
+.cfg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:820px}
+.cfg label{display:grid;gap:4px;font-weight:700;font-size:15px;align-content:start}
+.cfg .small{font-weight:400}
+.box{margin-top:28px;padding-top:20px;border-top:1px solid var(--line);max-width:820px}
+@media(max-width:900px){.today,.two{grid-template-columns:minmax(0,1fr)}.cfg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+body{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+.bar{position:static}
+.bar .wrap{min-height:52px}
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;background:var(--yolk);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid color-mix(in srgb,var(--yolkink) 20%,transparent)}
+#nav a{padding:10px 2px;border-radius:8px;font-size:13px;text-align:center;color:var(--yolkink)}
+.prog{top:0}
+.meals{grid-template-columns:minmax(0,1fr)}
+.meal{min-height:0}
+.cfg,.tot{grid-template-columns:minmax(0,1fr)}
+.wtabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+.lrow{grid-template-columns:4.9em minmax(0,1fr) 6.9em;gap:8px;padding:2px 4px;font-size:14px}
+table{font-size:14px}th,td{padding:7px 4px}
+.stack thead{display:none}
+.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}
+.stack td{display:grid;grid-template-columns:6.2em minmax(0,1fr);gap:8px;border:0;padding:3px 0;text-align:left;align-items:center}
+.stack td::before{content:attr(data-l);font-size:13px;font-weight:700;color:var(--muted)}
+.stack td.r{text-align:left}
+.shop tr{grid-template-columns:48px minmax(0,1fr);column-gap:10px}
+.shop td{grid-column:2}
+.shop td.ck{grid-column:1;grid-row:1 / span 6;display:block;padding:0}
+.shop td.ck::before,.shop td.nm::before{display:none}
+.shop td.nm{display:block}
+.mt td:first-child{display:block}
+.mt td:first-child::before{display:none}
+.price{width:100%;text-align:left}
+.trip input,.trip label{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.pbar i{transition:none}}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#hoje">Marmitas do ano</a>
+    <nav id="nav" aria-label="Páginas">
+      <a href="#hoje">Hoje</a><a href="#lista">Lista</a><a href="#compras">Compras</a><a href="#semana">Semana</a><a href="#receitas">Receitas</a><a href="#ajustes">Ajustes</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section class="page" id="hoje" hidden>
+    <div class="wrap pg today">
+      <div>
+        <div class="dayhead"><h2 id="dtitle"></h2><p id="dsub"></p></div>
+        <div class="meals" id="dmeals"></div>
+        <div class="night" id="dnight"></div>
+      </div>
+      <div class="tag" id="nexttag" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="page" id="lista" hidden>
+    <div class="wrap pg">
+      <div class="mhead">
+        <div><h2 id="ttitle"></h2><p class="lead" id="tsub" style="margin-bottom:0"></p></div>
+        <div class="mnav"><button type="button" id="prev" aria-label="Compra anterior">←</button><button type="button" id="next" aria-label="Próxima compra">→</button></div>
+      </div>
+      <p class="status" id="tstatus"></p>
+      <div class="prog"><b id="pct">0%</b><div class="pbar"><i id="pbar" style="width:0"></i></div><span id="ptext"></span></div>
+      <div id="twarn"></div>
+      <div class="scroll"><table class="stack shop">
+        <thead><tr><th>Peguei</th><th>Item</th><th>O sistema sugere</th><th>Comprei</th><th class="r">Estimado</th><th class="r">Paguei (R$)</th></tr></thead>
+        <tbody id="tlist"></tbody>
+      </table></div>
+      <div class="tot" id="tot"></div>
+      <div class="trip">
+        <label for="tdate">Data desta compra<input type="date" id="tdate"></label>
+        <button type="button" id="tdone"></button>
+        <button type="button" id="treset">Voltar pra data prevista</button>
+      </div>
+      <div class="chips" id="cooks"></div>
+      <p class="small">Marca cada item quando pôr no carrinho. "Comprei" em branco conta como a sugestão; "Paguei" é o total da linha. Quando você anota quanto pagou, as próximas compras passam a ser estimadas com o seu preço. ✅ = preço normal confirmado no encarte do Baggio; o resto começa com estimativas de novembro de 2026.</p>
+      <div class="tools"><button type="button" id="limpar">Apagar o que anotei nesta compra</button><span class="msg" id="msg" role="status"></span></div>
+    </div>
+  </section>
+
+  <section class="page" id="compras" hidden>
+    <div class="wrap pg">
+      <h2>Todas as compras</h2>
+      <p class="lead" id="allsub"></p>
+      <div class="tot" id="allsum" style="margin-bottom:22px"></div>
+      <div class="lkey"><span><i class="sw"></i>Prevista</span><span><i class="sw g"></i>Já marcado na lista</span><span><i class="sw f"></i>Feita</span><span><i class="sw p"></i>O que você pagou</span><span><i class="sw l"></i>Seu limite</span></div>
+      <div class="years" id="ledger"></div>
+    </div>
+  </section>
+
+  <section class="page" id="semana" hidden>
+    <div class="wrap pg">
+      <h2>Cozinhar e montar as marmitas</h2>
+      <p class="lead" id="wlead">São 4 cardápios que se revezam, um por semana. Tudo pesado na balança: cru antes de cozinhar, pronto na hora de montar. Escolhe a semana:</p>
+      <div class="wtabs" id="wtabs"></div>
+      <div id="wbody"></div>
+    </div>
+  </section>
+
+  <section class="page" id="receitas" hidden>
+    <div class="wrap pg">
+      <h2>Receitas</h2>
+      <p class="lead">O pão, o feijão e o arroz são iguais em toda semana. O resto do dia de cozinhar está na página Semana. Óleo: 1 ml pesa 0,92 g. Água: 1 ml pesa 1 g.</p>
+      <div class="recs" id="recs"></div>
+    </div>
+  </section>
+
+  <section class="page" id="ajustes" hidden>
+    <div class="wrap pg">
+      <h2>Ajustes</h2>
+      <p class="lead">Mudou alguma coisa aqui, o plano inteiro se refaz até o fim de 2028. O que você já marcou e anotou nas compras continua guardado. É sempre uma compra por mês.</p>
+      <div class="cfg">
+        <label for="inicio">Dia da primeira compra<input type="date" id="inicio"><span class="small">O plano começa nesse dia. As próximas compras ficam um mês depois de cada uma.</span></label>
+        <label for="dia">Dia de cozinhar<select id="dia"></select><span class="small">Toda semana, nesse dia.</span></label>
+        <label for="lim">Limite por compra (R$)<input type="text" inputmode="decimal" id="lim"><span class="small">Nos meses mais baratos, o sistema adianta o que não estraga pra segurar os mais caros dentro dele.</span></label>
+      </div>
+      <div class="box">
+        <h3>Salvar sozinho no GitHub</h3>
+        <p>Neste aparelho tudo já salva sozinho, a cada toque. Conectando o GitHub, salva também na sua conta, sozinho, uns segundos depois de cada mudança. Aí, se trocar de celular ou abrir no computador, está tudo lá.</p>
+        <ol class="small" style="padding-left:20px">
+          <li>No GitHub, entra em Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</li>
+          <li>Nome: marmitas. Expiration: 1 ano (quando vencer, faz outra e cola aqui de novo).</li>
+          <li>Em Permissions, abre "Account permissions", acha "Gists" e escolhe "Read and write". Não precisa mexer em mais nada.</li>
+          <li>Clica em Generate token, copia a chave e cola aqui embaixo. Em cada aparelho novo, cola a mesma chave.</li>
+        </ol>
+        <div class="tools" id="ghform"><label for="tok" style="display:grid;gap:4px;font-weight:700;font-size:15px;flex:1 1 280px">Chave do GitHub<input type="password" id="tok" autocomplete="off" spellcheck="false" placeholder="github_pat_..."></label><button type="button" id="ghcon" class="dark">Conectar</button></div>
+        <div class="tools" id="ghon" hidden><button type="button" id="ghnow">Salvar agora</button><button type="button" id="ghoff">Desconectar este aparelho</button></div>
+        <p class="msg" id="ghs" role="status"></p>
+        <p class="small">A chave fica guardada só neste aparelho e nunca vai pro arquivo do site. Não manda ela pra ninguém. Os dados vão pra um gist secreto chamado marmitas-dados.json: não aparece no seu perfil.</p>
+      </div>
+      <div class="box">
+        <h3>Backup em arquivo</h3>
+        <p class="small">Outro jeito de guardar ou levar pra outro aparelho, sem GitHub.</p>
+        <div class="tools">
+          <button type="button" id="exp">Salvar backup</button>
+          <label class="small" for="imp" style="display:inline-flex;gap:8px;align-items:center">Abrir backup <input type="file" id="imp" accept="application/json,.json" style="width:auto;min-height:0;border:0;padding:0"></label>
+        </div>
+      </div>
+      <div class="box">
+        <h3>Começar do zero</h3>
+        <p class="small">Apaga todas as datas, marcações, pesos e preços. Se o GitHub estiver conectado, apaga lá também.</p>
+        <div class="tools"><button type="button" id="zerar">Apagar tudo</button><span class="msg" id="msg2" role="status"></span></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+{
+const DAY=864e5,KEY="marmitas-v3",PAGES=["hoje","lista","compras","semana","receitas","ajustes"];
+const WD=["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+const WA=["dom","seg","ter","qua","qui","sex","sáb"];
+const MN=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const MA=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const nf=(v,d)=>v.toLocaleString("pt-BR",{maximumFractionDigits:d});
+const brl=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const pl=(n,a,b)=>n===1?a:b;
+const kg=g=>g>=1000?nf(g/1000,2)+" kg":Math.round(g)+" g";
+const lt=ml=>ml>=1000?nf(ml/1000,2)+" L":Math.round(ml)+" ml";
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const dm=t=>{const d=new Date(t);return `${WA[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth()+1}`};
+const dmy=t=>{const d=new Date(t);return `${d.getUTCDate()}/${d.getUTCMonth()+1}/${d.getUTCFullYear()}`};
+const longd=t=>{const d=new Date(t);return `${WD[d.getUTCDay()]}, ${d.getUTCDate()} de ${MN[d.getUTCMonth()]}`};
+const isDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"");
+const parseDate=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return Date.UTC(+m[1],+m[2]-1,+m[3])};
+const addM=(t,k)=>{const d=new Date(t),y=d.getUTCFullYear(),mo=d.getUTCMonth()+k,last=new Date(Date.UTC(y,mo+1,0)).getUTCDate();return Date.UTC(y,mo,Math.min(d.getUTCDate(),last))};
+const toNum=s=>{if(s==null||s==="")return null;const v=parseFloat(String(s).replace(/\s/g,"").replace(",","."));return isFinite(v)&&v>=0?v:null};
+const now=new Date(),TODAY=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+/* compras. b = gasto no dia de cozinhar; d = gasto em cada dia (índice 0 = dia de cozinhar); pk = tamanho do que se compra. dur = não estraga (pode ser comprado adiantado) */
+const items=[
+{id:"arroz",n:"Arroz parboilizado",ok:1,dur:1,pk:1000,p:4.49,b:1170,d:[0,0,0,0,0,0,0],q:kg,w:["pacote de 1 kg","pacotes de 1 kg"]},
+{id:"feijao",n:"Feijão preto",ok:1,dur:1,pk:1000,p:8.49,b:750,d:[0,0,0,0,0,0,0],q:kg,w:["pacote de 1 kg","pacotes de 1 kg"]},
+{id:"macarrao",n:"Macarrão",dur:1,pk:500,p:3.30,b:250,d:[0,0,0,0,0,0,0],q:kg,w:["pacote de 500 g","pacotes de 500 g"]},
+{id:"farinha",n:"Farinha de trigo",dur:1,pk:1000,p:4.30,b:1050,d:[0,0,0,0,100,0,0],q:kg,w:["pacote de 1 kg","pacotes de 1 kg"]},
+{id:"fermento",n:"Fermento biológico seco",pk:125,p:11.00,b:20,d:[0,0,0,0,1.5,0,0],q:kg,w:["pacote de 125 g","pacotes de 125 g"]},
+{id:"acucar",n:"Açúcar",dur:1,pk:1000,p:4.50,b:36,d:[0,0,0,0,0,0,0],q:kg,w:["pacote de 1 kg","pacotes de 1 kg"]},
+{id:"sal",n:"Sal",dur:1,pk:1000,p:2.70,b:50,d:[1,1,1,1,2,1,1],q:kg,w:["pacote de 1 kg","pacotes de 1 kg"]},
+{id:"oleo",n:"Óleo de soja",ok:1,dur:1,pk:900,p:8.99,b:145,d:[10,15,10,10,15,10,10],q:lt,w:["frasco de 900 ml","frascos de 900 ml"]},
+{id:"molho",n:"Molho de tomate",ok:1,dur:1,pk:300,p:1.79,b:210,d:[0,0,0,0,0,0,0],q:kg,w:["sachê de 300 g","sachês de 300 g"]},
+{id:"ovos",n:"Ovos",ok:1,pk:20,p:12.90,b:0,d:[2,2,2,2,2,2,2],q:v=>`${Math.round(v)} ovos`,w:["bandeja de 20","bandejas de 20"]},
+{id:"frango",n:"Coxa e sobrecoxa",pk:1,p:3.13,b:2,d:[0,0,0,0,0,0,0],q:v=>`${nf(v,1)} pedaços`,w:["pedaço","pedaços"],x:n=>` (uns ${nf(n*.25,2)} kg)`},
+{id:"batata",n:"Batata",pk:1,p:1.17,b:2,d:[0,0,0,0,0,0,0],q:v=>`${nf(v,1)} batatas`,w:["batata média","batatas médias"],x:n=>` (uns ${nf(n*.15,2)} kg)`},
+{id:"cebola",n:"Cebola",pk:1,p:1.25,b:.7,d:[0,0,0,0,0,0,0],q:v=>`${nf(v,1)} cebolas`,w:["cebola média","cebolas médias"],x:n=>` (uns ${n*150} g)`},
+{id:"alho",n:"Alho",pk:10,p:1.40,b:7,d:[0,1,0,0,0,0,0],q:v=>`${Math.round(v)} dentes`,w:["cabeça","cabeças"],x:n=>` (uns ${n*10} dentes)`}
+];
+const buyLabel=(it,n)=>`${n} ${pl(n,it.w[0],it.w[1])}${it.x?it.x(n):""}`;
+/* a semana: o que é igual toda semana (café, lanche, à noite) */
+const daily=[
+{c:"Pãozinho docinho da semana passada e 1 ovo frito",l:"2 pãezinhos docinhos quentinhos"},
+{c:"2 fatias de pão e 1 ovo mexido",l:'<a href="#r-alho">Pão de alho</a> (2 fatias)'},
+{c:"2 fatias de pão e 1 ovo cozido",l:"2 pãezinhos docinhos"},
+{c:"2 fatias de pão e 1 ovo frito",l:"2 pãezinhos docinhos"},
+{c:"2 fatias de pão e 1 ovo mexido",l:'<a href="#r-frigideira">Pão de frigideira</a> (3 discos)'},
+{c:"2 fatias de pão e 1 ovo cozido",l:"2 pãezinhos docinhos"},
+{c:"2 fatias de pão e 1 ovo frito",l:'<a href="#r-ovopao">Pão com ovo mexido</a>'}
+];
+const SLOTS=["1a","1j","2a","2j","3a","3j","4a","4j","5a","5j","6a","6j","7a","7j"];
+const OVO=new Set(["2a","3j","4j","5a","6j","7j"]);
+const O_TYPE={n:"Arroz, feijão e ovo",c:"O",comp:["arroz","feijao"],extra:"frita 1 ovo na hora"};
+/* os 4 cardápios. Todos usam as mesmas quantidades por semana: 2 pedaços de frango, 2 batatas, 250 g de macarrão, 210 g de molho, 105 g de cebola, 28 g de alho */
+const WEEKS={
+A:{t:"Frango ensopado",r:"Frango ensopado, batata assada na airfryer e macarrão ao molho.",
+ types:{F:{n:"Frango ensopado",c:"F",comp:["arroz","feijao","frango"]},B:{n:"Batata assada",c:"B",comp:["arroz","feijao","batata"]},M:{n:"Macarrão ao molho",c:"M",comp:["macarrao"]}},
+ slots:{"1a":"B","1j":"F","2j":"B","3a":"M","4a":"F","5j":"M","6a":"F","7a":"F"},
+ comps:{frango:["Frango ensopado pronto",400],batata:["Batata assada pronta",220],macarrao:["Macarrão ao molho pronto",760]},
+ pesa:[["Frango (coxa e sobrecoxa)","2 pedaços (uns 500 g)"],["Batata","300 g (2 médias)"],["Macarrão","250 g"],["Molho de tomate","210 g: 60 g no frango, 150 g no macarrão"],["Cebola","105 g: 35 g no feijão, 35 g no frango, 35 g no macarrão"],["Alho","28 g (7 dentes): 8 g feijão, 8 g arroz, 4 g frango, 4 g batata, 4 g macarrão"],["Óleo","80 ml (74 g): 15 feijão, 30 arroz, 15 frango, 15 batata, 5 macarrão"],["Sal","40 g: 10 feijão, 15 arroz, 3 frango, 2 batata, 10 na água do macarrão"],["Água","200 ml no frango, 2,5 L pra cozinhar o macarrão, 100 ml no molho"]],
+ s:["<b>Frango ensopado:</b> doura os 2 pedaços em 15 ml de óleo, 4 min de cada lado. Junta 35 g de cebola picada e 4 g de alho, mexe 1 min. Põe 60 g de molho, 200 ml de água e 3 g de sal. Tampa e deixa 40 min em fogo baixo (ou 15 min na pressão). Tira pele e osso, desfia e mistura no molho da panela.",
+  "<b>Batata assada:</b> corta os 300 g de batata em rodelas de 1 cm e mistura com 15 ml de óleo, 4 g de alho amassado e 2 g de sal. Airfryer a 200 °C por 20 a 25 min, sacudindo na metade.",
+  "<b>Macarrão ao molho:</b> 2,5 L de água fervendo com 10 g de sal. Cozinha os 250 g de macarrão 2 min a menos do que diz o pacote e escorre. Na mesma panela, refoga 35 g de cebola e 4 g de alho em 5 ml de óleo, junta 150 g de molho e 100 ml de água, ferve 5 min e mistura o macarrão."]},
+B:{t:"Escondidinho",r:"Escondidinho de frango com purê, frango de panela, macarrão ao molho e sopa de feijão com macarrão.",
+ types:{E:{n:"Escondidinho de frango",c:"B",comp:["arroz","recheio","pure"]},P:{n:"Frango de panela",c:"F",comp:["arroz","feijao","frangop"]},M:{n:"Macarrão ao molho",c:"M",comp:["macarrao"]},S:{n:"Sopa de feijão com macarrão",c:"S",comp:["sopa"]}},
+ slots:{"1a":"E","1j":"P","2j":"E","3a":"M","4a":"S","5j":"M","6a":"P","7a":"S"},
+ sopa:.25,
+ comps:{recheio:["Recheio de frango pronto",220],pure:["Purê pronto",380],frangop:["Frango de panela pronto",140],macarrao:["Macarrão ao molho pronto",540],sopa:["Sopa pronta",1000]},
+ pesa:[["Frango (coxa e sobrecoxa)","2 pedaços (uns 500 g)"],["Batata","300 g (2 médias)"],["Macarrão","250 g: 175 g no macarrão ao molho, 75 g na sopa"],["Molho de tomate","210 g: 60 g no recheio, 150 g no macarrão"],["Cebola","105 g: 35 g feijão, 15 g frango, 20 g recheio, 35 g macarrão"],["Alho","28 g (7 dentes): 8 g feijão, 8 g arroz, 4 g frango, 4 g purê, 4 g macarrão"],["Óleo","80 ml (74 g): 15 feijão, 30 arroz, 10 frango, 5 recheio, 15 purê, 5 macarrão"],["Sal","40 g: 10 feijão, 15 arroz, 3 frango, 2 purê, 10 na água do macarrão"],["Água","2 L pro macarrão, 100 ml no molho, 400 ml na sopa"]],
+ s:["<b>Frango de panela (os 2 pedaços):</b> tempera com 4 g de alho e 3 g de sal. Panela tampada, fogo baixo, com 10 ml de óleo e 15 g de cebola, 30 min, virando e pingando água se grudar. Destampa 5 min pra dourar. Tira pele e osso e desfia os 2.",
+  "<b>Divide o frango:</b> pesa o frango desfiado e separa a metade. Uma metade é o frango de panela. A outra vai pra frigideira com 5 ml de óleo, 20 g de cebola e 60 g de molho por 5 min: é o recheio do escondidinho.",
+  "<b>Purê:</b> descasca os 300 g de batata, corta em cubos e cozinha 15 min em água sem sal. Escorre guardando 50 ml da água. Amassa quente com 15 ml de óleo, 4 g de alho amassado, 2 g de sal e a água guardada.",
+  "<b>Macarrão ao molho:</b> 2 L de água fervendo com 10 g de sal, cozinha 175 g de macarrão 2 min a menos do que diz o pacote e escorre. Refoga 35 g de cebola e 4 g de alho em 5 ml de óleo, junta 150 g de molho e 100 ml de água, ferve 5 min e mistura.",
+  "<b>Sopa de feijão com macarrão:</b> depois de pesar o feijão pronto, separa 25% dele (a conta aparece embaixo). Junta 400 ml de água, ferve, põe 75 g de macarrão cru e cozinha 10 min mexendo."]},
+C:{t:"Frango assado",r:"Frango assado na airfryer com molho, batata ao murro e macarrão ao molho.",
+ types:{F:{n:"Frango assado ao molho",c:"F",comp:["arroz","feijao","frango"]},B:{n:"Batata ao murro",c:"B",comp:["arroz","feijao","batata"]},M:{n:"Macarrão ao molho",c:"M",comp:["macarrao"]}},
+ slots:{"1a":"B","1j":"F","2j":"B","3a":"M","4a":"F","5j":"M","6a":"F","7a":"F"},
+ comps:{frango:["Frango assado pronto, com molho",360],batata:["Batata ao murro pronta",230],macarrao:["Macarrão ao molho pronto",760]},
+ pesa:[["Frango (coxa e sobrecoxa)","2 pedaços (uns 500 g)"],["Batata","300 g (2 médias)"],["Macarrão","250 g"],["Molho de tomate","210 g: 60 g no frango, 150 g no macarrão"],["Cebola","105 g: 35 g no feijão, 35 g no frango, 35 g no macarrão"],["Alho","28 g (7 dentes): 8 g feijão, 8 g arroz, 4 g frango, 4 g batata, 4 g macarrão"],["Óleo","80 ml (74 g): 15 feijão, 30 arroz, 15 frango, 15 batata, 5 macarrão"],["Sal","40 g: 10 feijão, 15 arroz, 3 frango, 2 batata, 10 na água do macarrão"],["Água","2,5 L pra cozinhar o macarrão, 100 ml no molho"]],
+ s:["<b>Frango assado:</b> tempera os 2 pedaços com 4 g de alho amassado e 3 g de sal. Airfryer a 200 °C por 25 a 30 min, virando na metade. Tira pele e osso e desfia. Numa frigideira, 15 ml de óleo e 35 g de cebola por 3 min, junta 60 g de molho, 2 min, e mistura o frango.",
+  "<b>Batata ao murro:</b> cozinha as 2 batatas inteiras, com casca (300 g), por 15 min. Amassa cada uma com a palma da mão por cima de um pano. Põe por cima 15 ml de óleo, 4 g de alho amassado e 2 g de sal. Airfryer a 200 °C por 15 min.",
+  "<b>Macarrão ao molho:</b> igual à semana A: 2,5 L de água com 10 g de sal, 250 g de macarrão 2 min a menos do que diz o pacote. Molho: 35 g de cebola e 4 g de alho em 5 ml de óleo, 150 g de molho e 100 ml de água, 5 min."]},
+D:{t:"Macarronada",r:"Macarronada de frango, picadinho de frango, batata dourada e sopa de feijão com macarrão.",
+ types:{P:{n:"Picadinho de frango",c:"F",comp:["arroz","feijao","picadinho"]},B:{n:"Batata dourada",c:"B",comp:["arroz","feijao","batata"]},N:{n:"Macarronada de frango",c:"M",comp:["macarronada"]},S:{n:"Sopa de feijão com macarrão",c:"S",comp:["sopa"]}},
+ slots:{"1a":"B","1j":"P","2j":"B","3a":"N","4a":"S","5j":"N","6a":"P","7a":"S"},
+ sopa:.25,
+ comps:{picadinho:["Picadinho pronto",260],batata:["Batata dourada pronta",230],macarronada:["Macarronada pronta",600],sopa:["Sopa pronta",1100]},
+ pesa:[["Frango (coxa e sobrecoxa)","2 pedaços (uns 500 g)"],["Batata","300 g (2 médias)"],["Macarrão","250 g: 125 g na macarronada, 125 g na sopa"],["Molho de tomate","210 g: 60 g no picadinho, 150 g na macarronada"],["Cebola","105 g: 35 g feijão, 35 g picadinho, 35 g macarronada"],["Alho","28 g (7 dentes): 8 g feijão, 8 g arroz, 4 g picadinho, 4 g macarronada, 4 g batata"],["Óleo","80 ml (74 g): 15 feijão, 30 arroz, 15 picadinho, 5 macarronada, 15 batata"],["Sal","40 g: 10 feijão, 15 arroz, 3 nos frangos, 2 batata, 10 na água do macarrão"],["Água","1 L pra cozinhar o frango, 100 ml no picadinho, 2 L pro macarrão, 100 ml na sopa"]],
+ s:["<b>Picadinho (1 pedaço):</b> com uma faca, tira a carne crua do osso, sem pele, e corta em cubinhos. Refoga em 15 ml de óleo por 5 min. Junta 35 g de cebola e 4 g de alho, 1 min. Põe 60 g de molho, 100 ml de água e 2 g de sal, tampa e deixa 20 min.",
+  "<b>Frango da macarronada (o outro pedaço):</b> cozinha em 1 L de água com 1 g de sal por 25 min. Desfia sem pele e osso. Guarda 300 ml desse caldo pra sopa.",
+  "<b>Macarronada:</b> 2 L de água fervendo com 10 g de sal, cozinha 125 g de macarrão 2 min a menos do que diz o pacote. Refoga 35 g de cebola e 4 g de alho em 5 ml de óleo, junta 150 g de molho, 100 ml do caldo e o frango desfiado, 5 min, e mistura o macarrão.",
+  "<b>Sopa de feijão com macarrão:</b> separa 25% do feijão pronto (a conta aparece embaixo), junta os 300 ml de caldo do frango e 100 ml de água, ferve, põe 125 g de macarrão cru e cozinha 10 min mexendo.",
+  "<b>Batata dourada:</b> corta os 300 g em cubos de 2 cm, cozinha 10 min em água e escorre. Doura numa frigideira com 15 ml de óleo, 4 g de alho e 2 g de sal, uns 8 min."]}
+};
+const COMMON={arroz:["Arroz pronto",3150],feijao:["Feijão pronto",1900]};
+const recs=[
+{id:"pao",n:"Pão da semana",r:"Dia de cozinhar, toda semana. 1 pão de forma (16 fatias) e 9 pãezinhos docinhos.",h:"Pesa",i:["1.000 g de farinha de trigo e mais 50 g pra sovar","20 g de fermento biológico seco","600 ml de água morna (uns 38 °C)","60 ml de óleo (55 g)","24 g de açúcar","10 g de sal","Pra pincelar: 12 g de açúcar com 30 ml de água","5 ml de óleo pra untar a forma e a assadeira"],s:["Mistura a água morna, os 24 g de açúcar e o fermento. Espera 10 min: se espumar, o fermento está bom.","Junta o óleo e o sal e vai pondo a farinha aos poucos, misturando com a mão.","Sova 10 a 12 min, até a massa ficar lisa e parar de grudar. Usa os 50 g de farinha extra só se grudar.","Cobre com um pano e deixa crescer 1 hora, até dobrar.","Pesa a massa toda e divide em 2 (a conta está na página Semana). Uma metade: enrola como rocambole e põe na forma untada. A outra: 9 bolinhas do mesmo peso, numa assadeira untada, uma encostada na outra.","Deixa crescer 40 min.","Forno a 180 °C já quente: as bolinhas saem com 25 a 30 min, o pão de forma com 35 a 40 min.","Pincela as bolinhas com a água com açúcar assim que saírem. Espera esfriar, fatia o pão em 16 e congela tudo menos 6 fatias e 4 bolinhas."],tip:"Água quente demais mata o fermento. Do freezer, o pão vai direto pra frigideira ou airfryer e fica igual a pão torrado."},
+{id:"feijao",n:"Feijão da semana",r:"Dia de cozinhar, toda semana.",h:"Pesa",i:["750 g de feijão preto","2 L de água pro molho (essa água vai fora)","2,2 L de água pra cozinhar","35 g de cebola picada","8 g de alho (2 dentes)","15 ml de óleo (14 g)","10 g de sal"],s:["Na véspera, deixa o feijão de molho nos 2 L de água, de 8 a 12 horas. Joga essa água fora.","Panela de pressão com o feijão e os 2,2 L de água. Depois que pegar pressão, 30 a 35 min. Espera a pressão sair sozinha.","Doura o alho e a cebola no óleo, junta o feijão e o sal e ferve 10 min sem tampa.","Pesa o feijão pronto e põe o peso na página Semana: ela diz quanto vai em cada marmita."],tip:"No dia da primeira compra, põe de molho assim que chegar: 4 horas já ajudam."},
+{id:"arroz",n:"Arroz da semana",r:"Dia de cozinhar, toda semana.",h:"Pesa",i:["1.170 g de arroz parboilizado","3,1 L de água quente","30 ml de óleo (28 g)","8 g de alho (2 dentes)","15 g de sal"],s:["Doura o alho no óleo, junta o arroz e mexe 1 min.","Põe a água e o sal.","Fogo baixo, tampado, uns 25 min, até secar.","Pesa o arroz pronto e põe o peso na página Semana."],tip:"Se a panela não couber, faz em 2 vezes, com metade de cada coisa: 585 g de arroz, 1,55 L de água, 15 ml de óleo, 4 g de alho e 7,5 g de sal."},
+{id:"ovo",n:"Ovo do dia",r:"Todo dia, 2 ovos: 1 no café, 1 na marmita de ovo (no 7º dia, no lanche).",h:"Jeitos",i:["Frito: 5 ml de óleo (1 colher de chá), fogo médio, 2 a 3 min.","Mexido: bate com 1 g de sal e mexe em fogo baixo com 5 ml de óleo até firmar.","Cozido na panela: água fervendo, 9 a 10 min, depois água fria.","Cozido na airfryer: 150 °C por 13 a 15 min, sem água, depois água fria."],s:["Nos dias de ovo cozido, cozinha os 2 do dia juntos de manhã e leva 1 pra marmita."]},
+{id:"esquentar",n:"Esquentar a marmita",r:"Todo dia, 2 vezes.",h:"Jeitos",i:["Micro-ondas: 3 a 4 min. Se ainda estiver congelada, 6 a 7 min, mexendo na metade.","Sem micro-ondas: panela tampada com 30 ml de água, fogo baixo, 8 a 10 min, mexendo."],s:["Tem que sair fumaça do meio da comida.","Na marmita de ovo, frita o ovo enquanto esquenta."]},
+{id:"alho",n:"Pão de alho",r:"Lanche do 2º dia.",h:"Pesa",i:["2 fatias do pão de forma","4 g de alho (1 dente) amassado","5 ml de óleo","1 g de sal"],s:["Mistura o alho, o óleo e o sal.","Passa nas fatias.","Airfryer a 180 °C por 4 min, ou frigideira em fogo baixo dos dois lados."]},
+{id:"frigideira",n:"Pão de frigideira",r:"Lanche do 5º dia e café do primeiro dia do plano. 3 discos, sem forno.",h:"Pesa",i:["100 g de farinha de trigo","1,5 g de fermento biológico","1 g de sal","5 ml de óleo","60 ml de água morna"],s:["Mistura tudo e sova 2 min.","Cobre e espera 30 min.","Divide em 3 de uns 55 g e abre bem fino com as mãos.","Frigideira sem óleo, fogo baixo, tampada: 2 a 3 min de cada lado, até dourar e estufar."]},
+{id:"ovopao",n:"Pão com ovo mexido",r:"Lanche do 7º dia.",h:"Pesa",i:["2 fatias do pão de forma","1 ovo","1 g de sal","5 ml de óleo"],s:["Torra as fatias na frigideira ou na airfryer.","Mexe o ovo com o sal no óleo, fogo baixo.","Põe entre as fatias."]}
+];
+/* guardado: start, dia, lim, trips[i] = {d, done, q, p, c}, pesos[semana] = {comp: g} */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const DEF=()=>({start:iso(TODAY),dia:0,lim:192,trips:[],pesos:{}});
+let st=Object.assign(DEF(),LS.get(KEY,{}));
+const clean=()=>{if(!isDate(st.start))st.start=iso(TODAY);if(st.dia!=="auto"&&!(+st.dia>=0&&+st.dia<=6))st.dia=0;if(!Array.isArray(st.trips))st.trips=[];if(!(toNum(st.lim)>0))st.lim=192;if(!st.pesos||typeof st.pesos!=="object")st.pesos={};delete st.int};
+clean();
+const save=()=>{st.upd=Date.now();LS.set(KEY,st);ghQueue()};
+const tr=i=>st.trips[i]||(st.trips[i]={});
+/* salvar sozinho no GitHub: a chave e o id do gist ficam só neste aparelho, fora dos dados e do backup */
+const GHK="marmitas-gh",FILE="marmitas-dados.json";
+const ghGet=()=>LS.get(GHK,{}),ghSet=v=>LS.set(GHK,v);
+let ghTimer=null,ghBusy=false;
+async function api(path,opt){const o=opt||{},c=ghGet();const r=await fetch("https://api.github.com"+path,{method:o.method||"GET",body:o.body,headers:Object.assign({"Accept":"application/vnd.github+json","Authorization":"Bearer "+c.tok,"X-GitHub-Api-Version":"2022-11-28"},o.body?{"Content-Type":"application/json"}:{})});if(!r.ok){const e=new Error("http "+r.status);e.status=r.status;throw e}return r.status===204?null:r.json()}
+async function ghFind(){const c=ghGet();if(c.gist)return c.gist;for(let pg=1;pg<=10;pg++){const list=await api(`/gists?per_page=100&page=${pg}`);const g=list.find(x=>x.files&&x.files[FILE]);if(g){ghSet(Object.assign(ghGet(),{gist:g.id}));return g.id}if(list.length<100)break}return null}
+async function ghPull(){const id=await ghFind();if(!id)return null;let g;try{g=await api(`/gists/${id}`)}catch(e){if(e.status===404){const c=ghGet();delete c.gist;ghSet(c);return null}throw e}const f=g.files&&g.files[FILE];if(!f)return null;let txt=f.content;if(f.truncated){txt=await (await fetch(f.raw_url)).text()}return JSON.parse(txt)}
+async function ghPush(){const body=JSON.stringify(st);const id=await ghFind();if(id){try{await api(`/gists/${id}`,{method:"PATCH",body:JSON.stringify({files:{[FILE]:{content:body}}})})}catch(e){if(e.status!==404)throw e;const c=ghGet();delete c.gist;ghSet(c);return ghPush()}}else{const g=await api("/gists",{method:"POST",body:JSON.stringify({description:"Marmitas do ano: dados salvos sozinhos",public:false,files:{[FILE]:{content:body}}})});ghSet(Object.assign(ghGet(),{gist:g.id}))}ghSet(Object.assign(ghGet(),{last:Date.now()}))}
+const ghErr=e=>e&&e.status===401?"A chave não funcionou: venceu ou está sem a permissão de Gists. Faz outra e cola de novo.":e&&e.status===403?"O GitHub recusou: confere se a chave tem Gists em Read and write.":"Sem internet agora. Fica salvo aqui e vai pro GitHub quando voltar.";
+function ghStatus(m){const c=ghGet(),on=!!c.tok;const f=$("ghform"),o=$("ghon"),s=$("ghs");if(!f||!o||!s)return;f.hidden=on;o.hidden=!on;if(m!=null){s.textContent=m;return}if(!on){s.textContent="Não conectado. Os dados ficam só neste aparelho.";return}const l=c.last?new Date(c.last):null;s.textContent=l?`Conectado. Último salvamento no GitHub: ${l.toLocaleDateString("pt-BR")} às ${l.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}.`:"Conectado."}
+function ghQueue(){if(!ghGet().tok)return;clearTimeout(ghTimer);ghStatus("Salvando no GitHub…");ghTimer=setTimeout(async()=>{if(ghBusy){ghQueue();return}ghBusy=true;try{await ghPush();ghStatus()}catch(e){ghStatus(ghErr(e))}finally{ghBusy=false}},2500)}
+async function ghSync(){if(!ghGet().tok||ghBusy)return;ghBusy=true;try{const r=await ghPull();if(r&&isDate(r.start)&&(r.upd||0)>(st.upd||0)){st=Object.assign(DEF(),r);clean();LS.set(KEY,st);fillCfg();cur=null;wSel=null;render();ghSet(Object.assign(ghGet(),{last:Date.now()}));ghStatus("Dados atualizados com o que estava no GitHub.")}else{await ghPush();ghStatus()}}catch(e){ghStatus(ghErr(e))}finally{ghBusy=false}}
+let trips=[],cur=null,cookW=0,shortN=0,END=0,S0=0,C1=0,N0=7,wSel=null;
+const $=id=>document.getElementById(id);
+const pos=t=>{if(t<C1)return {ix:Math.round((t-S0)/DAY),w:0,f:N0/7};const di=Math.round((t-C1)/DAY);return {ix:di%7,w:1+Math.floor(di/7),f:1}};
+const letter=w=>"ABCD"[w%4];
+function compute(){
+  S0=parseDate(st.start);const sw=new Date(S0).getUTCDay();
+  cookW=st.dia==="auto"?sw:+st.dia;
+  C1=S0+DAY;while(new Date(C1).getUTCDay()!==cookW)C1+=DAY;
+  N0=Math.round((C1-S0)/DAY);shortN=N0<7?N0:0;
+  END=Date.UTC(Math.max(2028,new Date(S0).getUTCFullYear()+2)+1,0,1);
+  const T=[{t:S0,exp:true}];let base=0;
+  for(let i=1;i<400;i++){
+    const x=st.trips[i],prev=T[i-1].t;let t=null,exp=false;
+    if(x&&isDate(x.d)){const v=parseDate(x.d);if(v>prev&&v<END){t=v;exp=true}}
+    if(exp)base=i;else{t=addM(T[base].t,i-base);if(t<=prev)t=prev+DAY}
+    if(t>=END)break;
+    T.push({t,exp});
+  }
+  const B=T.map((o,i)=>{const a=o.t,z=i+1<T.length?T[i+1].t:END,need={},cooks=[];let days=0;items.forEach(it=>need[it.id]=0);
+    for(let t=a;t<z;t+=DAY){const p=pos(t);days++;if(p.ix===0){cooks.push({t,v:letter(p.w),n:p.w===0?N0:7});items.forEach(it=>need[it.id]+=it.b*p.f)}items.forEach(it=>need[it.id]+=it.d[p.ix])}
+    return {a,z,days,cooks,need,exp:o.exp}});
+  const stock={},unit={};items.forEach(it=>{stock[it.id]=0;unit[it.id]=it.p});
+  trips=[];
+  B.forEach((o,i)=>{
+    const x=st.trips[i]||{},done=!!x.done,has={...stock},qv={},sug={},pre={};
+    items.forEach(it=>{const v=x.q&&x.q[it.id];qv[it.id]=v!=null&&v!==""&&!isNaN(+v)?Math.max(0,Math.round(+v)):null;sug[it.id]=Math.max(0,Math.ceil((o.need[it.id]-has[it.id])/it.pk-1e-9))});
+    /* nivelar: se esta compra fica abaixo do limite e as 2 próximas passam, adianta o que não estraga */
+    if(!done){
+      let slack=st.lim-items.reduce((s,it)=>s+(qv[it.id]??sug[it.id])*unit[it.id],0);
+      if(slack>.01){
+        const s={};items.forEach(it=>{s[it.id]=Math.max(0,has[it.id]+(qv[it.id]??sug[it.id])*it.pk-o.need[it.id])});
+        for(let j=i+1;j<=i+2&&j<B.length&&slack>.01;j++){
+          const nj=B[j].need,def={};let cj=0;
+          items.forEach(it=>{def[it.id]=Math.max(0,Math.ceil((nj[it.id]-s[it.id])/it.pk-1e-9));cj+=def[it.id]*unit[it.id]});
+          let over=cj-st.lim;
+          const cands=items.filter(it=>it.dur&&qv[it.id]==null).sort((p,q)=>unit[p.id]-unit[q.id]);
+          let moved=true;
+          while(over>.01&&slack>.01&&moved){moved=false;for(const it of cands){if(def[it.id]>0&&unit[it.id]<=slack+.01&&over>.01){pre[it.id]=(pre[it.id]||0)+1;def[it.id]--;s[it.id]+=it.pk;slack-=unit[it.id];over-=unit[it.id];moved=true}}}
+          items.forEach(it=>{s[it.id]=Math.max(0,s[it.id]+def[it.id]*it.pk-nj[it.id])});
+        }
+      }
+    }
+    const rows=items.map(it=>{
+      const sg=sug[it.id]+(pre[it.id]||0),act=qv[it.id]??sg;
+      const after=has[it.id]+act*it.pk-o.need[it.id];
+      stock[it.id]=Math.max(0,after);
+      const paid=toNum(x.p&&x.p[it.id]),est=act*unit[it.id];
+      if(paid!=null&&act>0)unit[it.id]=paid/act;
+      return {it,use:o.need[it.id],has:has[it.id],sug:sg,pre:pre[it.id]||0,qv:qv[it.id],act,left:Math.max(0,after),short:after<-1e-6?-after:0,est,paid,got:!!(x.c&&x.c[it.id])};
+    });
+    const toBuy=rows.filter(r=>r.act>0),got=toBuy.filter(r=>r.got),paidVals=rows.filter(r=>r.paid!=null);
+    trips.push({i,a:o.a,z:o.z,days:o.days,cooks:o.cooks,rows,exp:o.exp,done,est:rows.reduce((s,r)=>s+r.est,0),paid:paidVals.reduce((s,r)=>s+r.paid,0),filled:paidVals.length,
+      nBuy:toBuy.length,nGot:got.length,pct:toBuy.length?Math.round(got.length/toBuy.length*100):100,gotEst:got.reduce((s,r)=>s+r.est,0),late:!done&&o.a<TODAY,hasPre:rows.some(r=>r.pre>0)});
+  });
+  if(cur==null||cur>=trips.length)cur=nextIdx();
+}
+const nextIdx=()=>{const n=trips.findIndex(t=>!t.done);return n<0?trips.length-1:n};
+const typeOf=(v,slot)=>OVO.has(slot)?O_TYPE:WEEKS[v].types[WEEKS[v].slots[slot]];
+const badge=ty=>`<span class="mk mk-${ty.c}">${ty.n}</span>`;
+/* página Hoje */
+function renderToday(){
+  let t=TODAY,pre="";
+  if(TODAY<S0){t=S0;const dd=Math.round((S0-TODAY)/DAY);pre=`O plano começa daqui a ${dd} ${pl(dd,"dia","dias")}. Esse vai ser o primeiro dia:`}
+  else if(TODAY>=END){t=END-DAY;pre="O plano chegou ao fim. Muda a data da primeira compra em Ajustes pra planejar de novo."}
+  const p=pos(t),v=letter(p.w),first=t===S0,cookDay=p.ix===0,dn=daily[p.ix];
+  $("dtitle").textContent=TODAY<S0?longd(t):TODAY>=END?"Fim do plano":`Hoje, ${longd(t)}`;
+  const shortTxt=p.w===0&&N0<7?` Primeira semana curta, de ${N0} ${pl(N0,"dia","dias")}.`:"";
+  $("dsub").innerHTML=pre?pre:cookDay?`Dia de cozinhar a semana ${v}: ${WEEKS[v].t.toLowerCase()}.${shortTxt} <a href="#semana">Ver pesos e passo a passo</a>`:`${p.ix+1}º dia da semana ${v} (${WEEKS[v].t.toLowerCase()}).${shortTxt}`;
+  const cafe=first?`<a href="#r-frigideira">Pão de frigideira</a> e 1 ovo frito (ainda não tem pãozinho da semana passada)`:dn.c;
+  const meal=slot=>{const ty=typeOf(v,slot);return `${badge(ty)}${ty.extra?`<br>${ty.extra}`:""}${cookDay&&slot==="1a"?"<br>Come logo depois de montar as marmitas.":""}`};
+  $("dmeals").innerHTML=[["Café",cafe],["Almoço",meal(`${p.ix+1}a`)],["Lanche",dn.l],["Janta",meal(`${p.ix+1}j`)]].map(([n,x])=>`<div class="meal"><small>${n}</small><div>${x}</div></div>`).join("");
+  const nx=pos(t+DAY);let ev="";
+  if(nx.ix===0)ev="Põe 750 g de feijão de molho em 2 L de água e passa 2 pedaços de frango do freezer pra geladeira: amanhã é dia de cozinhar.";
+  else if(nx.ix>=3&&!(p.w===0&&N0<7)){const a=typeOf(v,`${nx.ix+1}a`),j=typeOf(v,`${nx.ix+1}j`);ev=`Passa as 2 marmitas de amanhã (${a.n.toLowerCase()} e ${j.n.toLowerCase()}) do freezer pra geladeira.`}
+  $("dnight").innerHTML=`<b>À noite</b>${ev||"Nada pra fazer: as marmitas de amanhã já estão na geladeira."}`;
+}
+function renderTag(){
+  const k=nextIdx(),t=trips[k],dd=Math.round((t.a-TODAY)/DAY);
+  const when=t.done?"Todas as compras do plano estão feitas.":dd>1?`Daqui a ${dd} dias.`:dd===1?"Amanhã.":dd===0?"Hoje.":`Era pra ter sido há ${-dd} ${pl(-dd,"dia","dias")}.`;
+  $("nexttag").innerHTML=`<span class="k">Próxima compra, a ${k+1}ª</span><span class="d">${dm(t.a)}</span><p>${when} Cobre ${t.days} dias e ${t.cooks.length} dias de cozinhar.</p><span class="e">${brl(t.est)}</span><p style="font-size:14px">estimativa${t.est>st.lim?`, ${brl(t.est-st.lim)} acima do seu limite`:`, dentro do limite de ${brl(st.lim)}`}</p>${t.nGot?`<div class="pb"><i style="width:${t.pct}%"></i></div><p>${t.pct}% já marcado na lista.</p>`:""}<button type="button" id="opennext">Abrir a lista</button>`;
+  $("opennext").onclick=()=>{cur=k;location.hash="#lista";renderTrip();ledger()};
+}
+/* página Compras */
+function ledger(){
+  const max=Math.max(st.lim,...trips.map(t=>Math.max(t.est,t.paid)))||1;
+  const years={};trips.forEach(t=>{const y=new Date(t.a).getUTCFullYear();(years[y]=years[y]||[]).push(t)});
+  const cost=t=>t.filled?t.paid:t.est,MES=365.25/12*DAY;
+  const ys=y=>{const ts=years[y],tot=ts.reduce((s,t)=>s+cost(t),0),a=Math.max(S0,Date.UTC(+y,0,1)),z=Math.min(END,Date.UTC(+y+1,0,1)),meses=Math.max(1,(z-a)/MES);return {tot,n:ts.length,porCompra:tot/ts.length,meses}};
+  $("ledger").innerHTML=Object.keys(years).map(y=>{const s=ys(y);return `<div class="yr"><h3>${y}</h3><p class="ysum">Total <b>${brl(s.tot)}</b> em ${s.n} ${pl(s.n,"compra","compras")}. Média de <b>${brl(s.porCompra)}</b> por compra.</p>${years[y].map(t=>{const d=new Date(t.a);const val=t.filled?"pago "+brl(t.paid):!t.done&&t.nGot?`${t.pct}% marcado`:brl(t.est);return `<button type="button" class="lrow${t.i===cur?" on":""}${t.done?" done":""}${t.late?" late":""}" data-i="${t.i}" aria-label="Compra ${t.i+1}, ${dmy(t.a)}"><span class="m">${d.getUTCDate()} ${MA[d.getUTCMonth()]}${t.done?" ✓":""}</span><span class="track"><i style="width:${(t.est/max*100).toFixed(1)}%"></i>${!t.done&&t.nGot?`<u style="width:${(t.gotEst/max*100).toFixed(1)}%"></u>`:""}<s style="left:${(st.lim/max*100).toFixed(1)}%"></s>${t.filled?`<b style="left:calc(${(t.paid/max*100).toFixed(1)}% - 2px)"></b>`:""}</span><span class="v">${val}</span></button>`}).join("")}</div>`}).join("");
+  const sum=trips.reduce((s,t)=>s+cost(t),0),meses=(END-S0)/MES,spent=trips.filter(t=>t.done).reduce((s,t)=>s+cost(t),0),over=trips.filter(t=>t.est>st.lim+.01).length;
+  $("allsub").textContent=`${trips.length} compras, uma por mês, de ${dmy(trips[0].a)} até ${dmy(END-DAY)}. Feitas: ${trips.filter(t=>t.done).length}. ${over?`${over} ${pl(over,"compra passa","compras passam")} do seu limite mesmo adiantando o que não estraga (a primeira é sempre a mais cara: a despensa começa vazia).`:"Todas ficam dentro do seu limite."} Toca numa compra pra abrir a lista dela.`;
+  $("allsum").innerHTML=`<div><b>${brl(sum)}</b><span>Total até ${dmy(END-DAY)}</span></div><div><b>${brl(sum/trips.length)}</b><span>Média por compra (por mês)</span></div><div><b>${brl(sum/meses*12)}</b><span>Média por ano${spent?`. Já gastou ${brl(spent)}`:""}</span></div>`;
+}
+/* página Lista */
+const totHTML=t=>{const over=t.est>st.lim;return `<div class="${t.filled?"paid":""}"><b>${brl(t.paid)}</b><span>Você pagou (${t.filled} de ${t.nBuy} itens anotados)</span></div><div class="${over?"over":""}"><b>${brl(t.est)}</b><span>Estimativa desta compra${over?`, ${brl(t.est-st.lim)} acima do limite`:`, ${brl(st.lim-t.est)} abaixo do limite`}</span></div><div><b>${brl(t.days?t.est/t.days:0)}</b><span>Por dia, em ${t.days} dias</span></div>`};
+function progress(t){$("pct").textContent=`${t.pct}%`;$("pbar").style.width=t.pct+"%";$("ptext").textContent=t.nBuy?`${t.nGot} de ${t.nBuy} itens marcados. ${brl(t.gotEst)} de ${brl(t.est)} da estimativa.`:"Nada pra comprar nesta compra."}
+function statusLine(t){
+  const s=$("tstatus"),x=st.trips[t.i]||{};
+  if(t.done){s.className="status ok";s.textContent="Compra feita. As próximas já descontam o que sobrar desta."}
+  else if(t.nBuy&&t.nGot===t.nBuy){s.className="status full";s.textContent=`Tudo marcado. Toca em "Fiz essa compra" pra fechar.`}
+  else if(t.late){s.className="status late";s.textContent=`A data desta compra já passou. Se já comprou, toca em "Fiz essa compra"; se ainda não, muda a data pra quando for.`}
+  else if(t.i===0){s.className="status";s.textContent="É a primeira compra. A despensa começa vazia, então ela leva pacotes inteiros que duram mais de um mês."}
+  else if(x.d){s.className="status";s.textContent="Data marcada por você. As compras depois desta contam a partir dela."}
+  else{s.className="status";s.textContent="Data prevista: um mês depois da compra anterior. Se for comprar em outro dia, muda a data lá embaixo e o resto se ajusta."}
+  $("tdone").textContent=t.done?"Desfazer: ainda não comprei":"Fiz essa compra";
+  $("tdone").className=t.done?"":t.nBuy&&t.nGot===t.nBuy?"go":"dark";
+}
+function warn(t){const sh=t.rows.filter(r=>r.short>0);$("twarn").innerHTML=sh.length?`<p class="warn">O que você comprou não chega até a próxima compra. Falta: ${sh.map(r=>`${r.it.n.toLowerCase()} (${r.it.q(r.short)})`).join(", ")}. Compra um pouco a mais, ou adianta a próxima compra.</p>`:""}
+function renderTrip(){
+  const t=trips[cur],x=st.trips[cur]||{};
+  $("ttitle").textContent=`Compra ${t.i+1}: ${dm(t.a)}/${new Date(t.a).getUTCFullYear()}`;
+  $("tsub").textContent=`Cobre ${t.days} dias, até ${dm(t.z-DAY)}, a véspera da próxima compra. ${t.cooks.length} ${pl(t.cooks.length,"dia","dias")} de cozinhar.${t.hasPre?" Inclui coisas que não estragam adiantadas pras próximas compras, que são mais caras.":""}`;
+  statusLine(t);progress(t);warn(t);
+  $("tdate").value=iso(t.a);
+  $("treset").hidden=!(t.i>0&&x.d&&!t.done);
+  $("cooks").innerHTML=t.cooks.map(c=>`<span class="chip">${dm(c.t)}: semana ${c.v}, ${WEEKS[c.v].t.toLowerCase()}${c.n<7?`, curta (${c.n} ${pl(c.n,"dia","dias")})`:""}</span>`).join("");
+  $("tot").innerHTML=totHTML(t);
+  $("tlist").innerHTML=t.rows.map(r=>{
+    const it=r.it,qv=r.qv==null?"":r.qv,pv=x.p&&x.p[it.id]!=null?String(x.p[it.id]).replace(".",","):"";
+    const det=`Usa ${it.q(r.use)}${r.has>1e-6?`, já tem ${it.q(r.has)} em casa`:""}${r.left>1e-6?`, sobram ${it.q(r.left)} pra próxima`:""}.`;
+    const sg=r.sug>0?`<b>${buyLabel(it,r.sug)}</b>${r.pre?`<span class="pre">${r.pre} ${pl(r.pre,"adiantado","adiantados")} pra próxima compra</span>`:""}`:`<b>Não precisa comprar</b>`;
+    const cls=r.act>0?(r.got?"got":""):"none";
+    return `<tr class="${cls}" id="row-${it.id}"><td class="ck">${r.act>0?`<label for="c-${it.id}"><input type="checkbox" id="c-${it.id}" data-c="${it.id}"${r.got?" checked":""} aria-label="Peguei: ${it.n}"></label>`:""}</td><td class="nm" data-l="Item"><b>${it.n}${it.ok?" ✅":""}</b><span class="small">${r.act>0?buyLabel(it,r.act):"Tem em casa"}</span></td><td data-l="Sugestão" class="sg"><div>${sg}<span class="small">${det}</span></div></td><td data-l="Comprei"><span class="qty"><input type="number" min="0" step="1" inputmode="numeric" id="q-${it.id}" data-q="${it.id}" value="${qv}" placeholder="${r.sug}" aria-label="Quantos comprei: ${it.n}"><span>${it.w[1].split(" ")[0]}</span></span></td><td data-l="Estimado" class="r" id="e-${it.id}">${r.act>0?brl(r.est):"—"}</td><td data-l="Paguei" class="r"><input class="price" type="text" inputmode="decimal" id="p-${it.id}" data-p="${it.id}" value="${pv}" placeholder="${r.act>0?nf(r.est,2):"0"}" aria-label="Quanto paguei: ${it.n}"></td></tr>`;
+  }).join("");
+}
+function refresh(){
+  compute();renderTag();ledger();const t=trips[cur];
+  $("tot").innerHTML=totHTML(t);progress(t);statusLine(t);warn(t);
+  t.rows.forEach(r=>{const row=$("row-"+r.it.id);if(!row)return;$("e-"+r.it.id).textContent=r.act>0?brl(r.est):"—";row.className=r.act>0?(r.got?"got":""):"none"});
+}
+/* página Semana */
+const thisWeek=()=>{const t=Math.max(TODAY,S0);const p=pos(Math.min(t,END-DAY));return letter(p.w)};
+function compsOf(v){const W=WEEKS[v],c={...COMMON,...W.comps},cnt={};
+  SLOTS.forEach(s=>{const ty=typeOf(v,s);ty.comp.forEach(k=>cnt[k]=(cnt[k]||0)+1)});
+  return Object.keys(c).filter(k=>cnt[k]).map(k=>({k,n:c[k][0],exp:c[k][1],div:cnt[k]}))}
+function perMarm(v,k){const W=WEEKS[v],cs=compsOf(v),c=cs.find(x=>x.k===k);if(!c)return null;const val=toNum((st.pesos[v]||{})[k]);const tot=val??c.exp;const eff=k==="feijao"&&W.sopa?tot*(1-W.sopa):tot;return {g:eff/c.div,real:val!=null,tot}}
+function renderWeekTabs(){
+  const tw=thisWeek();if(!wSel)wSel=tw;
+  $("wtabs").innerHTML=Object.keys(WEEKS).map(k=>`<button type="button" class="wtab" data-w="${k}" aria-pressed="${k===wSel}"><b>Semana ${k}</b><span>${WEEKS[k].t}${k===tw?", a desta semana":""}</span></button>`).join("");
+}
+function renderWeek(){
+  renderWeekTabs();
+  const v=wSel,W=WEEKS[v],cs=compsOf(v),pv=st.pesos[v]||{};
+  const dayName=i=>WD[(cookW+i)%7];
+  const massa=toNum(pv.massa);
+  const pesa=[["Feijão preto","750 g (receita do feijão)"],["Arroz parboilizado","1.170 g (receita do arroz)"],["Pão","1.000 g de farinha e o resto da receita do pão"],...W.pesa];
+  const montRows=SLOTS.map((s,idx)=>{const ty=typeOf(v,s),d=+s[0]-1,meal=s[1]==="a"?"almoço":"janta";
+    const parts=ty.comp.map(k=>{const c=cs.find(x=>x.k===k),pm=perMarm(v,k);return `${c.n.replace(/ pronto.*| pronta.*/,"").toLowerCase()} <span class="w">${pm.real?"":"~"}${Math.round(pm.g)} g</span>`}).join(" + ");
+    const where=s==="1a"?"Come na hora":idx<6?"Geladeira":"Freezer";
+    return `<tr><td data-l="Nº">${idx+1}</td><td data-l="Quando">${dayName(d)}, ${meal}</td><td data-l="Marmita"><div>${badge(ty)}</div></td><td data-l="O que pôr"><div>${parts}${ty.extra?`; ${ty.extra}`:""}</div></td><td data-l="Onde" class="where">${where}</td></tr>`}).join("");
+  const calc=cs.map(c=>{const val=pv[c.k]??"";const pm=perMarm(v,c.k);const sopaTxt=c.k==="feijao"&&W.sopa?` Separa ${Math.round(pm.tot*W.sopa)} g pra sopa; o resto`:"";return `<label for="w-${c.k}">${c.n} (g)<input type="text" inputmode="decimal" id="w-${c.k}" data-w="${c.k}" value="${String(val).replace(".",",")}" placeholder="uns ${c.exp}"><output id="o-${c.k}">${pm.real?"":"Com o peso previsto: "}${sopaTxt?sopaTxt+" ":""}÷ ${c.div} = ${Math.round(pm.g)} g por marmita</output></label>`}).join("")+
+    `<label for="w-massa">Massa do pão crescida (g)<input type="text" inputmode="decimal" id="w-massa" data-w="massa" value="${String(pv.massa??"").replace(".",",")}" placeholder="uns 1700"><output id="o-massa">${massa?`Forma: ${Math.round(massa/2)} g. Bolinhas: 9 de ${Math.round(massa/2/9)} g.`:"Forma: metade. Bolinhas: 9 de 1/18 da massa cada."}</output></label>`;
+  $("wbody").innerHTML=`
+  <h3 style="margin-top:22px">Semana ${v}: ${W.t}</h3><p class="lead" style="margin-bottom:0">${W.r}</p>
+  <div class="two">
+    <div><h4>1. Pesa tudo antes de começar</h4><div class="scroll"><table><thead><tr><th>O quê</th><th>Quanto</th></tr></thead><tbody>${pesa.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small">Na noite anterior: 750 g de feijão de molho em 2 L de água e 2 pedaços de frango do freezer pra geladeira.</p></div>
+    <div><h4>2. Cozinha, nesta ordem (umas 3 horas)</h4><ol class="steps">
+      <li>Faz a massa do <a href="#r-pao">pão da semana</a> e deixa crescer 1 hora.</li>
+      <li>Põe o <a href="#r-feijao">feijão</a> na pressão.</li>
+      ${W.s.map(x=>`<li>${x}</li>`).join("")}
+      <li>Faz o <a href="#r-arroz">arroz</a>.</li>
+      <li>Pesa a massa do pão, divide e modela. Deixa crescer 40 min e assa no forno.</li>
+      <li>Pesa cada coisa pronta e anota abaixo: a página calcula quanto vai em cada marmita.</li>
+    </ol></div>
+  </div>
+  <h4>3. Pesa o que ficou pronto</h4>
+  <p class="small">Põe a panela vazia na balança e anota o peso antes de cozinhar. Pronto, pesa de novo e diminui. Na hora de montar, põe a marmita vazia na balança, zera e vai colocando até o peso.</p>
+  <div class="calc" id="calc">${calc}</div>
+  <h4>4. Monta as 14 marmitas</h4>
+  <p class="small">O "~" quer dizer peso previsto. Quando você digita o peso de verdade lá em cima, a conta fica exata. Escreve o número e o dia na tampa.</p>
+  <div class="scroll"><table class="stack mt"><thead><tr><th>Nº</th><th>Quando</th><th>Marmita</th><th>O que pôr</th><th>Onde</th></tr></thead><tbody id="mont">${montRows}</tbody></table></div>
+  <h4>5. Café, lanche e o que fazer à noite (igual toda semana)</h4>
+  <div class="scroll"><table class="stack"><thead><tr><th>Dia</th><th>Café</th><th>Lanche</th><th>À noite</th></tr></thead><tbody>${daily.map((dd,i)=>{let n="";if(i===6)n="750 g de feijão de molho e 2 pedaços de frango pra geladeira.";else if(i>=2){const a=typeOf(v,`${i+2}a`),j=typeOf(v,`${i+2}j`);n=`Passa a nº ${SLOTS.indexOf(`${i+2}a`)+1} (${a.n.toLowerCase()}) e a nº ${SLOTS.indexOf(`${i+2}j`)+1} (${j.n.toLowerCase()}) pra geladeira.`}return `<tr class="${i?"":"cook"}"><td data-l="Dia"><b>${dayName(i)}</b>${i?"":'<br><span class="small">dia de cozinhar</span>'}</td><td data-l="Café">${dd.c}</td><td data-l="Lanche">${dd.l}</td><td data-l="À noite">${n||"—"}</td></tr>`}).join("")}</tbody></table></div>
+  <p class="small">${shortN?`Sua primeira semana é curta: ${shortN} ${pl(shortN,"dia","dias")}, porque a primeira compra não cai no dia de cozinhar. No dia da compra, faz só as ${shortN*2} primeiras marmitas, com ${shortN} sétimos de cada peso.`:"A primeira compra cai no dia de cozinhar, então a primeira semana já é completa."} Dá umas 2.260 kcal e 77 g de proteína por dia.</p>
+  <h4>Regras pra marmita durar</h4>
+  <ul class="rules">
+    <li><b>Geladeira primeiro, freezer depois.</b> As nº 1 a 6 são dos 3 primeiros dias; as nº 7 a 14 vão pro freezer.</li>
+    <li><b>Toda noite, passa as 2 do dia seguinte do freezer pra geladeira.</b> Nunca descongela na pia.</li>
+    <li><b>Esfria antes de fechar, mas não deixa mais de 2 horas fora.</b></li>
+    <li><b>Geladeira: até 3 dias. Freezer: até 30 dias.</b> Descongelou, não volta pro freezer.</li>
+    <li><b>As de batata e purê ficam sempre entre as primeiras:</b> batata congelada fica aguada.</li>
+    <li><b>No dia da compra, congela o frango de 2 em 2 pedaços.</b> Cada saquinho é um dia de cozinhar.</li>
+    <li><b>Forno só pros pães,</b> uma vez por semana. Frango assado e batata vão na airfryer.</li>
+  </ul>`;
+}
+function updateCalc(){
+  const v=wSel,cs=compsOf(v),W=WEEKS[v],pv=st.pesos[v]||{};
+  cs.forEach(c=>{const pm=perMarm(v,c.k),o=$("o-"+c.k);if(!o)return;const sopaTxt=c.k==="feijao"&&W.sopa?` Separa ${Math.round(pm.tot*W.sopa)} g pra sopa; o resto`:"";o.textContent=`${pm.real?"":"Com o peso previsto: "}${sopaTxt?sopaTxt+" ":""}÷ ${c.div} = ${Math.round(pm.g)} g por marmita`});
+  const m=toNum(pv.massa);$("o-massa").textContent=m?`Forma: ${Math.round(m/2)} g. Bolinhas: 9 de ${Math.round(m/2/9)} g.`:"Forma: metade. Bolinhas: 9 de 1/18 da massa cada.";
+  const dayName=i=>WD[(cookW+i)%7];
+  $("mont").innerHTML=SLOTS.map((s,idx)=>{const ty=typeOf(v,s),d=+s[0]-1,meal=s[1]==="a"?"almoço":"janta";const parts=ty.comp.map(k=>{const c=cs.find(x=>x.k===k),pm=perMarm(v,k);return `${c.n.replace(/ pronto.*| pronta.*/,"").toLowerCase()} <span class="w">${pm.real?"":"~"}${Math.round(pm.g)} g</span>`}).join(" + ");const where=s==="1a"?"Come na hora":idx<6?"Geladeira":"Freezer";return `<tr><td data-l="Nº">${idx+1}</td><td data-l="Quando">${dayName(d)}, ${meal}</td><td data-l="Marmita"><div>${badge(ty)}</div></td><td data-l="O que pôr"><div>${parts}${ty.extra?`; ${ty.extra}`:""}</div></td><td data-l="Onde" class="where">${where}</td></tr>`}).join("");
+}
+function fillCfg(){
+  const sw=new Date(parseDate(st.start)).getUTCDay();
+  $("dia").innerHTML=WD.map((d,i)=>`<option value="${i}">${d}</option>`).join("")+`<option value="auto">No dia da compra (${WD[sw].toLowerCase()})</option>`;
+  $("dia").value=String(st.dia);$("inicio").value=st.start;$("lim").value=String(st.lim).replace(".",",");
+}
+function render(){compute();renderToday();renderTag();ledger();renderTrip();renderWeek()}
+$("recs").innerHTML=recs.map(r=>`<article class="rec" id="r-${r.id}"><h3>${r.n}</h3><p class="rende">${r.r}</p><h4>${r.h}</h4><ul>${r.i.map(x=>`<li>${x}</li>`).join("")}</ul><h4>Como faz</h4><ol>${r.s.map(x=>`<li>${x}</li>`).join("")}</ol>${r.tip?`<p class="tip">${r.tip}</p>`:""}</article>`).join("");
+/* navegação */
+function route(){
+  let h=decodeURIComponent(location.hash.slice(1)),anchor=null;
+  if(h.startsWith("r-")){anchor=h;h="receitas"}
+  if(!PAGES.includes(h))h="hoje";
+  PAGES.forEach(p=>{$(p).hidden=p!==h});
+  document.querySelectorAll("#nav a").forEach(a=>{if(a.getAttribute("href")==="#"+h)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  if(anchor&&$(anchor))$(anchor).scrollIntoView();else window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
+const say=(id,m)=>{$(id).textContent=m;clearTimeout(say[id]);say[id]=setTimeout(()=>{$(id).textContent=""},5000)};
+$("inicio").addEventListener("change",e=>{if(!isDate(e.target.value))return;st.start=e.target.value;save();fillCfg();cur=null;wSel=null;render();say("msg2","Plano refeito a partir da nova data.")});
+$("dia").addEventListener("change",e=>{st.dia=e.target.value==="auto"?"auto":+e.target.value;save();wSel=null;render()});
+$("lim").addEventListener("change",e=>{const v=toNum(e.target.value);if(v>0){st.lim=v;save();render()}else e.target.value=String(st.lim).replace(".",",")});
+$("ledger").addEventListener("click",e=>{const b=e.target.closest(".lrow");if(!b)return;cur=+b.dataset.i;renderTrip();ledger();location.hash="#lista"});
+$("prev").addEventListener("click",()=>{if(cur>0){cur--;renderTrip();ledger()}});
+$("next").addEventListener("click",()=>{if(cur<trips.length-1){cur++;renderTrip();ledger()}});
+$("wtabs").addEventListener("click",e=>{const b=e.target.closest(".wtab");if(!b)return;wSel=b.dataset.w;renderWeek()});
+$("wbody").addEventListener("input",e=>{const inp=e.target.closest("input[data-w]");if(!inp)return;const v=wSel;st.pesos[v]=st.pesos[v]||{};const n=toNum(inp.value);if(n==null)delete st.pesos[v][inp.dataset.w];else st.pesos[v][inp.dataset.w]=n;save();updateCalc()});
+$("tdate").addEventListener("change",e=>{
+  const v=e.target.value;if(!isDate(v))return;
+  if(cur===0){st.start=v;fillCfg();save();render();say("msg","Data mudada. O plano se refez a partir dela.");return}
+  const t=parseDate(v),prev=trips[cur-1].a;
+  if(t<=prev){say("msg",`A data precisa ser depois da compra anterior (${dmy(prev)}).`);e.target.value=iso(trips[cur].a);return}
+  if(t>=END){say("msg",`O plano vai até ${dmy(END-DAY)}.`);e.target.value=iso(trips[cur].a);return}
+  tr(cur).d=v;
+  st.trips.forEach((x,j)=>{if(j>cur&&x&&isDate(x.d)&&parseDate(x.d)<=t)delete x.d});
+  save();render();say("msg","Data mudada. As próximas compras se ajustaram.");
+});
+$("treset").addEventListener("click",()=>{const x=st.trips[cur];if(x)delete x.d;save();render();say("msg","Voltou pra data prevista.")});
+$("tdone").addEventListener("click",()=>{
+  const t=trips[cur],x=tr(cur);
+  if(t.done){x.done=false;save();render();say("msg","Marcada como não feita. O que você anotou continua aqui.");return}
+  x.done=true;if(cur>0)x.d=iso(t.a);x.q=x.q||{};x.c=x.c||{};
+  t.rows.forEach(r=>{if(x.q[r.it.id]==null||x.q[r.it.id]==="")x.q[r.it.id]=r.act;if(r.act>0)x.c[r.it.id]=true});
+  save();cur=null;render();window.scrollTo(0,0);say("msg","Compra guardada. Abri a próxima.");
+});
+$("tlist").addEventListener("change",e=>{const c=e.target.closest("input[data-c]");if(!c)return;const x=tr(cur);x.c=x.c||{};if(c.checked)x.c[c.dataset.c]=true;else delete x.c[c.dataset.c];save();refresh()});
+$("tlist").addEventListener("input",e=>{
+  const q=e.target.closest("input[data-q]"),p=e.target.closest("input[data-p]");
+  if(!q&&!p)return;const x=tr(cur);
+  if(q){x.q=x.q||{};const v=q.value.trim();if(v===""||isNaN(+v))delete x.q[q.dataset.q];else x.q[q.dataset.q]=Math.max(0,Math.round(+v))}
+  if(p){x.p=x.p||{};const v=toNum(p.value);if(v==null)delete x.p[p.dataset.p];else x.p[p.dataset.p]=v}
+  save();refresh();
+});
+const twoTap=(btn,label,fn)=>btn.addEventListener("click",()=>{if(!btn.dataset.armed){btn.dataset.armed="1";btn.textContent="Toca de novo pra confirmar";btn.classList.add("dark");setTimeout(()=>{delete btn.dataset.armed;btn.textContent=label;btn.classList.remove("dark")},4000);return}delete btn.dataset.armed;btn.textContent=label;btn.classList.remove("dark");fn()});
+twoTap($("limpar"),"Apagar o que anotei nesta compra",()=>{const x=st.trips[cur];if(x){delete x.q;delete x.p;delete x.c;x.done=false}save();render();say("msg","Anotações desta compra apagadas.")});
+twoTap($("zerar"),"Apagar tudo",()=>{st=DEF();save();fillCfg();cur=null;wSel=null;render();say("msg2","Tudo apagado. Começa de novo pela data da primeira compra.")});
+$("exp").addEventListener("click",()=>{try{const blob=new Blob([JSON.stringify(st,null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`marmitas-backup-${iso(TODAY)}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);say("msg2","Backup salvo.")}catch(err){say("msg2","Não deu pra salvar o backup neste navegador.")}});
+$("imp").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o||!isDate(o.start))throw 0;st=Object.assign(DEF(),o);clean();save();fillCfg();cur=null;wSel=null;render();say("msg2","Backup aberto.")}catch(err){say("msg2","Esse arquivo não é um backup válido.")}e.target.value=""};rd.readAsText(f)});
+$("ghcon").addEventListener("click",()=>{const v=$("tok").value.trim();if(!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(v)){ghStatus("Isso não parece uma chave do GitHub. Ela começa com github_pat_.");return}ghSet({tok:v});$("tok").value="";ghStatus("Conectando…");ghSync()});
+$("ghnow").addEventListener("click",()=>{clearTimeout(ghTimer);ghSync()});
+$("ghoff").addEventListener("click",()=>{ghSet({});ghStatus("Desconectado neste aparelho. O que já foi salvo continua no seu GitHub.")});
+window.addEventListener("online",()=>ghSync());
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")ghSync()});
+fillCfg();
+render();
+route();
+ghStatus();
+ghSync();
+/* abre sem internet e pode virar app na tela inicial (só no site publicado, com https) */
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
