@@ -467,7 +467,8 @@ function compute(){
   const B=T.map((o,i)=>{const a=o.t,z=i+1<T.length?T[i+1].t:END,need={},cooks=[];let days=0;items.forEach(it=>need[it.id]=0);
     for(let t=a;t<z;t+=DAY){const p=pos(t);days++;if(p.ix===0){cooks.push({t,v:letter(p.w),n:p.w===0?N0:7});items.forEach(it=>need[it.id]+=it.b*p.f)}items.forEach(it=>need[it.id]+=it.d[p.ix])}
     return {a,z,days,cooks,need,exp:o.exp}});
-  const stock={},unit={};items.forEach(it=>{stock[it.id]=0;unit[it.id]=it.p});
+  /* unit = preço que vale pra estimar; começa no preço padrão e passa a ser o último que você informou */
+  const stock={},unit={},uWhen={};items.forEach(it=>{stock[it.id]=0;unit[it.id]=it.p;uWhen[it.id]=null});
   trips=[];
   B.forEach((o,i)=>{
     const x=st.trips[i]||{},done=!!x.done,has={...stock},qv={},sug={},pre={};
@@ -498,9 +499,9 @@ function compute(){
       let paid=null,uPrice=null,src=null;
       if(uIn!=null&&(sv==="u"||pIn==null)){src="u";uPrice=uIn;paid=uIn*base}
       else if(pIn!=null){src="p";paid=pIn;uPrice=base>0?pIn/base:null}
-      const est=act*unit[it.id];
-      if(paid!=null&&act>0)unit[it.id]=paid/act;
-      return {it,use:o.need[it.id],has:has[it.id],sug:sg,pre:pre[it.id]||0,qv:qv[it.id],act,left:Math.max(0,after),short:after<-1e-6?-after:0,est,paid,uPrice,src,base,wIn,got:!!(x.c&&x.c[it.id])};
+      const fromUser=uWhen[it.id],est=paid!=null?paid:act*unit[it.id];
+      if(paid!=null&&act>0){unit[it.id]=paid/act;uWhen[it.id]=o.a}
+      return {it,use:o.need[it.id],has:has[it.id],sug:sg,pre:pre[it.id]||0,qv:qv[it.id],act,left:Math.max(0,after),short:after<-1e-6?-after:0,est,paid,uPrice,src,base,wIn,fromUser,got:!!(x.c&&x.c[it.id])};
     });
     const toBuy=rows.filter(r=>r.act>0),got=toBuy.filter(r=>r.got),paidVals=rows.filter(r=>r.paid!=null);
     trips.push({i,a:o.a,z:o.z,days:o.days,cooks:o.cooks,rows,exp:o.exp,done,est:rows.reduce((s,r)=>s+r.est,0),paid:paidVals.reduce((s,r)=>s+r.paid,0),filled:paidVals.length,
@@ -538,15 +539,16 @@ function renderTag(){
 function ledger(){
   const max=Math.max(st.lim,...trips.map(t=>Math.max(t.est,t.paid)))||1;
   const years={};trips.forEach(t=>{const y=new Date(t.a).getUTCFullYear();(years[y]=years[y]||[]).push(t)});
-  const cost=t=>t.filled?t.paid:t.est,MES=365.25/12*DAY;
+  const cost=t=>t.est,MES=365.25/12*DAY;
   const ys=y=>{const ts=years[y],tot=ts.reduce((s,t)=>s+cost(t),0),a=Math.max(S0,Date.UTC(+y,0,1)),z=Math.min(END,Date.UTC(+y+1,0,1)),meses=Math.max(1,(z-a)/MES);return {tot,n:ts.length,porCompra:tot/ts.length,meses}};
-  $("ledger").innerHTML=Object.keys(years).map(y=>{const s=ys(y);return `<div class="yr"><h3>${y}</h3><p class="ysum">Total <b>${brl(s.tot)}</b> em ${s.n} ${pl(s.n,"compra","compras")}. Média de <b>${brl(s.porCompra)}</b> por compra.</p>${years[y].map(t=>{const d=new Date(t.a);const val=t.filled?"pago "+brl(t.paid):!t.done&&t.nGot?`${t.pct}% marcado`:brl(t.est);return `<button type="button" class="lrow${t.i===cur?" on":""}${t.done?" done":""}${t.late?" late":""}" data-i="${t.i}" aria-label="Compra ${t.i+1}, ${dmy(t.a)}"><span class="m">${d.getUTCDate()} ${MA[d.getUTCMonth()]}${t.done?" ✓":""}</span><span class="track"><i style="width:${(t.est/max*100).toFixed(1)}%"></i>${!t.done&&t.nGot?`<u style="width:${(t.gotEst/max*100).toFixed(1)}%"></u>`:""}<s style="left:${(st.lim/max*100).toFixed(1)}%"></s>${t.filled?`<b style="left:calc(${(t.paid/max*100).toFixed(1)}% - 2px)"></b>`:""}</span><span class="v">${val}</span></button>`}).join("")}</div>`}).join("");
+  $("ledger").innerHTML=Object.keys(years).map(y=>{const s=ys(y);return `<div class="yr"><h3>${y}</h3><p class="ysum">Total <b>${brl(s.tot)}</b> em ${s.n} ${pl(s.n,"compra","compras")}. Média de <b>${brl(s.porCompra)}</b> por compra.</p>${years[y].map(t=>{const d=new Date(t.a);const val=t.done?brl(t.est):t.nGot?`${t.pct}% marcado`:brl(t.est);return `<button type="button" class="lrow${t.i===cur?" on":""}${t.done?" done":""}${t.late?" late":""}" data-i="${t.i}" aria-label="Compra ${t.i+1}, ${dmy(t.a)}"><span class="m">${d.getUTCDate()} ${MA[d.getUTCMonth()]}${t.done?" ✓":""}</span><span class="track"><i style="width:${(t.est/max*100).toFixed(1)}%"></i>${!t.done&&t.nGot?`<u style="width:${(t.gotEst/max*100).toFixed(1)}%"></u>`:""}<s style="left:${(st.lim/max*100).toFixed(1)}%"></s>${t.filled?`<b style="left:calc(${(t.paid/max*100).toFixed(1)}% - 2px)"></b>`:""}</span><span class="v">${val}</span></button>`}).join("")}</div>`}).join("");
   const sum=trips.reduce((s,t)=>s+cost(t),0),meses=(END-S0)/MES,spent=trips.filter(t=>t.done).reduce((s,t)=>s+cost(t),0),over=trips.filter(t=>t.est>st.lim+.01).length;
   $("allsub").textContent=`${trips.length} compras, uma por mês, de ${dmy(trips[0].a)} até ${dmy(END-DAY)}. Feitas: ${trips.filter(t=>t.done).length}. ${over?`${over} ${pl(over,"compra passa","compras passam")} do seu limite mesmo adiantando o que não estraga (a primeira é sempre a mais cara: a despensa começa vazia).`:"Todas ficam dentro do seu limite."} Toca numa compra pra abrir a lista dela.`;
   $("allsum").innerHTML=`<div><b>${brl(sum)}</b><span>Total até ${dmy(END-DAY)}</span></div><div><b>${brl(sum/trips.length)}</b><span>Média por compra (por mês)</span></div><div><b>${brl(sum/meses*12)}</b><span>Média por ano${spent?`. Já gastou ${brl(spent)}`:""}</span></div>`;
 }
 /* página Lista */
-const totHTML=t=>{const over=t.est>st.lim;return `<div class="${t.filled?"paid":""}"><b>${brl(t.paid)}</b><span>Você pagou (${t.filled} de ${t.nBuy} itens anotados)</span></div><div class="${over?"over":""}"><b>${brl(t.est)}</b><span>Estimativa desta compra${over?`, ${brl(t.est-st.lim)} acima do limite`:`, ${brl(st.lim-t.est)} abaixo do limite`}</span></div><div><b>${brl(t.days?t.est/t.days:0)}</b><span>Por dia, em ${t.days} dias</span></div>`};
+const estTxt=r=>r.act>0?(r.paid!=null?"Valor que você informou":`Estimado ${brl(r.est)}${r.fromUser?`, pelo seu preço de ${dm(r.fromUser)}`:""}`):"—";
+const totHTML=t=>{const over=t.est>st.lim;return `<div class="${t.filled?"paid":""}"><b>${brl(t.paid)}</b><span>Você informou (${t.filled} de ${t.nBuy} itens)</span></div><div class="${over?"over":""}"><b>${brl(t.est)}</b><span>Total desta compra: o que você informou mais a estimativa do resto${over?`. ${brl(t.est-st.lim)} acima do limite`:`. ${brl(st.lim-t.est)} abaixo do limite`}</span></div><div><b>${brl(t.days?t.est/t.days:0)}</b><span>Por dia, em ${t.days} dias</span></div>`};
 function progress(t){$("pct").textContent=`${t.pct}%`;$("pbar").style.width=t.pct+"%";$("ptext").textContent=t.nBuy?`${t.nGot} de ${t.nBuy} itens marcados. ${brl(t.gotEst)} de ${brl(t.est)} da estimativa.`:"Nada pra comprar nesta compra."}
 function statusLine(t){
   const s=$("tstatus"),x=st.trips[t.i]||{};
@@ -576,7 +578,7 @@ function renderTrip(){
     const det=`Usa ${it.q(r.use)}${r.has>1e-6?`, já tem ${it.q(r.has)} em casa`:""}${r.left>1e-6?`, sobram ${it.q(r.left)} pra próxima`:""}.`;
     const sg=r.sug>0?`<b>${buyLabel(it,r.sug)}</b>${r.pre?`<span class="pre">${r.pre} ${pl(r.pre,"adiantado","adiantados")} pra próxima compra</span>`:""}`:`<b>Não precisa comprar</b>`;
     const cls=r.act>0?(r.got?"got":""):"none";
-    return `<tr class="${cls}" id="row-${it.id}"><td class="ck">${r.act>0?`<label for="c-${it.id}"><input type="checkbox" id="c-${it.id}" data-c="${it.id}"${r.got?" checked":""} aria-label="Peguei: ${it.n}"></label>`:""}</td><td class="nm" data-l="Item"><b>${it.n}${it.ok?" ✅":""}</b><span class="small">${r.act>0?buyLabel(it,r.act):"Tem em casa"}</span></td><td data-l="Sugestão" class="sg"><div>${sg}<span class="small">${det}</span></div></td><td data-l="Comprei"><span class="qty"><input type="number" min="0" step="1" inputmode="numeric" id="q-${it.id}" data-q="${it.id}" value="${qv}" placeholder="${r.sug}" aria-label="Quantos comprei: ${it.n}"><span>${it.w[1].split(" ")[0]}</span></span></td><td data-l="Preço"><div><div class="pin"><label class="mini" for="u-${it.id}">${uLabel(it)}<input class="price${r.src==="p"?" auto":""}" type="text" inputmode="decimal" id="u-${it.id}" data-u="${it.id}" value="${uv}" placeholder="${pu.kg?"":fx(r.act>0?r.est/r.act:it.p)}"></label>${pu.kg?`<label class="mini" for="wt-${it.id}">Peso (kg)<input class="price" type="text" inputmode="decimal" id="wt-${it.id}" data-wt="${it.id}" value="${wv}" placeholder="${nf(r.act*pu.kg,2)}"></label>`:""}</div><span class="small per" id="d-${it.id}">${perTxt(r)}</span></div></td><td data-l="Total pago"><div><label class="mini" for="p-${it.id}">Total (R$)<input class="price${r.src==="u"?" auto":""}" type="text" inputmode="decimal" id="p-${it.id}" data-p="${it.id}" value="${pv}" placeholder="${r.act>0?fx(r.est):"0"}"></label><span class="small" id="e-${it.id}">${r.act>0?`Estimado ${brl(r.est)}`:"—"}</span></div></td></tr>`;
+    return `<tr class="${cls}" id="row-${it.id}"><td class="ck">${r.act>0?`<label for="c-${it.id}"><input type="checkbox" id="c-${it.id}" data-c="${it.id}"${r.got?" checked":""} aria-label="Peguei: ${it.n}"></label>`:""}</td><td class="nm" data-l="Item"><b>${it.n}${it.ok?" ✅":""}</b><span class="small">${r.act>0?buyLabel(it,r.act):"Tem em casa"}</span></td><td data-l="Sugestão" class="sg"><div>${sg}<span class="small">${det}</span></div></td><td data-l="Comprei"><span class="qty"><input type="number" min="0" step="1" inputmode="numeric" id="q-${it.id}" data-q="${it.id}" value="${qv}" placeholder="${r.sug}" aria-label="Quantos comprei: ${it.n}"><span>${it.w[1].split(" ")[0]}</span></span></td><td data-l="Preço"><div><div class="pin"><label class="mini" for="u-${it.id}">${uLabel(it)}<input class="price${r.src==="p"?" auto":""}" type="text" inputmode="decimal" id="u-${it.id}" data-u="${it.id}" value="${uv}" placeholder="${pu.kg?"":fx(r.act>0?r.est/r.act:it.p)}"></label>${pu.kg?`<label class="mini" for="wt-${it.id}">Peso (kg)<input class="price" type="text" inputmode="decimal" id="wt-${it.id}" data-wt="${it.id}" value="${wv}" placeholder="${nf(r.act*pu.kg,2)}"></label>`:""}</div><span class="small per" id="d-${it.id}">${perTxt(r)}</span></div></td><td data-l="Total pago"><div><label class="mini" for="p-${it.id}">Total (R$)<input class="price${r.src==="u"?" auto":""}" type="text" inputmode="decimal" id="p-${it.id}" data-p="${it.id}" value="${pv}" placeholder="${r.act>0?fx(r.est):"0"}"></label><span class="small" id="e-${it.id}">${estTxt(r)}</span></div></td></tr>`;
   }).join("");
 }
 function refresh(){
@@ -584,7 +586,7 @@ function refresh(){
   $("tot").innerHTML=totHTML(t);progress(t);statusLine(t);warn(t);
   const act=document.activeElement;
   t.rows.forEach(r=>{const id=r.it.id,row=$("row-"+id);if(!row)return;
-    $("e-"+id).textContent=r.act>0?`Estimado ${brl(r.est)}`:"—";$("d-"+id).textContent=perTxt(r);row.className=r.act>0?(r.got?"got":""):"none";
+    $("e-"+id).textContent=estTxt(r);$("d-"+id).textContent=perTxt(r);row.className=r.act>0?(r.got?"got":""):"none";
     const u=$("u-"+id),p=$("p-"+id),w=$("wt-"+id);
     if(r.src==="u"&&p!==act){p.value=fx(r.paid)}
     if(r.src==="p"&&u!==act){u.value=fx(r.uPrice)}
